@@ -1,5 +1,10 @@
 from django.contrib import admin
-from .models import Project, ProjectPhase, ApprovalLine, Comment, ProjectDocument, DailyProgress, TaskChecklistItem
+
+# Admin site branding
+admin.site.site_header = 'WBS 관리자'
+admin.site.site_title = 'WBS 관리자'
+admin.site.index_title = 'WBS 관리 대시보드'
+from .models import Project, ProjectPhase, ApprovalLine, Comment, ProjectDocument, DailyProgress, TaskChecklistItem, UserProfile, Notification, SubscriptionPlan, UserSubscription, AdCampaign
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
@@ -29,130 +34,222 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(ProjectPhase)
 class ProjectPhaseAdmin(admin.ModelAdmin):
-    list_display = ['phase_name', 'project', 'order', 'status', 'progress', 'assignee', 'start_date', 'end_date']
-    list_filter = ['status', 'requires_approval', 'project']
-    search_fields = ['phase_name', 'description', 'project__title']
-    list_editable = ['status', 'progress', 'order']
+    list_display = ['title', 'project', 'order', 'is_completed', 'start_date', 'end_date']
+    list_filter = ['is_completed', 'project']
+    search_fields = ['title', 'description', 'project__title']
+    list_editable = ['is_completed', 'order']
     ordering = ['project', 'order']
     
     fieldsets = (
         ('기본 정보', {
-            'fields': ('project', 'phase_name', 'description', 'order')
+            'fields': ('project', 'title', 'description', 'order')
         }),
         ('일정', {
-            'fields': ('start_date', 'end_date', 'actual_start_date', 'actual_end_date')
+            'fields': ('start_date', 'end_date')
         }),
-        ('담당자 & 상태', {
-            'fields': ('assignee', 'status', 'progress')
-        }),
-        ('작업 시간', {
-            'fields': ('estimated_hours', 'actual_hours')
-        }),
-        ('승인', {
-            'fields': ('requires_approval',)
+        ('완료 상태', {
+            'fields': ('is_completed',)
         }),
     )
 
 
 @admin.register(ApprovalLine)
 class ApprovalLineAdmin(admin.ModelAdmin):
-    list_display = ['__str__', 'approver', 'order', 'status', 'is_final_approver', 'approved_at']
-    list_filter = ['status', 'is_final_approver', 'project']
-    search_fields = ['project__title', 'phase__phase_name', 'approver__username']
-    list_editable = ['status', 'order', 'is_final_approver']
+    list_display = ['__str__', 'approver', 'status', 'approved_at', 'created_at']
+    list_filter = ['status', 'project']
+    search_fields = ['project__title', 'approver__username']
+    list_editable = ['status']
     
     fieldsets = (
         ('승인 대상', {
-            'fields': ('project', 'phase')
+            'fields': ('project',)
         }),
         ('승인자 정보', {
-            'fields': ('approver', 'order', 'is_final_approver')
+            'fields': ('approver',)
         }),
         ('승인 상태', {
-            'fields': ('status', 'approved_at', 'comments')
+            'fields': ('status', 'comment', 'approved_at')
         }),
     )
 
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ['author', 'project', 'phase', 'comment_type', 'is_important', 'created_at']
-    list_filter = ['comment_type', 'is_important', 'created_at', 'project']
+    list_display = ['author', 'project', 'created_at']
+    list_filter = ['created_at', 'project']
     search_fields = ['content', 'author__username', 'project__title']
-    list_editable = ['comment_type', 'is_important']
     
     fieldsets = (
         ('댓글 대상', {
-            'fields': ('project', 'phase', 'parent')
+            'fields': ('project',)
         }),
         ('댓글 내용', {
-            'fields': ('author', 'content', 'comment_type', 'is_important')
+            'fields': ('author', 'content')
         }),
     )
 
 
 @admin.register(ProjectDocument)
 class ProjectDocumentAdmin(admin.ModelAdmin):
-    list_display = ['title', 'project', 'phase', 'document_type', 'author', 'version', 'updated_at']
-    list_filter = ['document_type', 'project', 'created_at']
-    search_fields = ['title', 'content', 'project__title']
+    list_display = ['title', 'project', 'uploaded_by', 'created_at']
+    list_filter = ['project', 'created_at']
+    search_fields = ['title', 'description', 'project__title']
     
     fieldsets = (
         ('문서 정보', {
-            'fields': ('title', 'document_type', 'version')
+            'fields': ('title', 'description')
         }),
         ('연결 정보', {
-            'fields': ('project', 'phase', 'author')
+            'fields': ('project', 'uploaded_by')
         }),
-        ('문서 내용', {
-            'fields': ('content',)
+        ('파일', {
+            'fields': ('file',)
         }),
     )
 
 
-class TaskChecklistItemInline(admin.TabularInline):
-    model = TaskChecklistItem
-    extra = 1
-    fields = ['task_name', 'is_completed', 'priority', 'estimated_time', 'actual_time']
-
-
 @admin.register(DailyProgress)
 class DailyProgressAdmin(admin.ModelAdmin):
-    list_display = ['date', 'project', 'phase', 'assignee', 'status', 'is_checked', 'progress_percentage', 'worked_hours']
-    list_filter = ['status', 'is_checked', 'date', 'project']
-    search_fields = ['project__title', 'phase__phase_name', 'assignee__username', 'memo']
-    list_editable = ['status', 'is_checked', 'progress_percentage', 'worked_hours']
+    list_display = ['date', 'project', 'progress', 'created_at']
+    list_filter = ['date', 'project']
+    search_fields = ['project__title', 'notes']
+    list_editable = ['progress']
     date_hierarchy = 'date'
-    inlines = [TaskChecklistItemInline]
     
     fieldsets = (
         ('기본 정보', {
-            'fields': ('project', 'phase', 'date', 'assignee')
+            'fields': ('project', 'date')
         }),
         ('진행 상태', {
-            'fields': ('status', 'is_checked', 'progress_percentage', 'worked_hours')
-        }),
-        ('메모 및 이슈', {
-            'fields': ('memo', 'issues')
+            'fields': ('progress', 'notes')
         }),
     )
 
 
 @admin.register(TaskChecklistItem)
 class TaskChecklistItemAdmin(admin.ModelAdmin):
-    list_display = ['task_name', 'daily_progress', 'is_completed', 'priority', 'estimated_time', 'actual_time']
-    list_filter = ['is_completed', 'priority', 'daily_progress__date']
-    search_fields = ['task_name', 'daily_progress__project__title']
-    list_editable = ['is_completed', 'priority', 'actual_time']
+    list_display = ['title', 'project', 'is_completed', 'order', 'created_at']
+    list_filter = ['is_completed', 'project']
+    search_fields = ['title', 'description', 'project__title']
+    list_editable = ['is_completed', 'order']
     
     fieldsets = (
         ('작업 정보', {
-            'fields': ('daily_progress', 'task_name', 'priority')
+            'fields': ('project', 'title', 'description', 'order')
         }),
         ('완료 상태', {
-            'fields': ('is_completed', 'completed_at')
-        }),
-        ('시간 관리', {
-            'fields': ('estimated_time', 'actual_time')
+            'fields': ('is_completed',)
         }),
     )
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ['user', 'department', 'position', 'phone', 'created_at']
+    list_filter = ['department', 'position', 'created_at']
+    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'department', 'position']
+    ordering = ['user__username']
+    
+    fieldsets = (
+        ('기본 정보', {
+            'fields': ('user', 'bio', 'avatar')
+        }),
+        ('연락처', {
+            'fields': ('phone', 'website')
+        }),
+        ('직장 정보', {
+            'fields': ('department', 'position')
+        }),
+        ('개인 정보', {
+            'fields': ('birth_date', 'location')
+        }),
+    )
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ['title', 'user', 'notification_type', 'is_read', 'created_at']
+    list_filter = ['notification_type', 'is_read', 'created_at']
+    search_fields = ['title', 'message', 'user__username']
+    list_editable = ['is_read']
+    ordering = ['-created_at']
+    
+    fieldsets = (
+        ('알림 정보', {
+            'fields': ('user', 'title', 'message', 'notification_type')
+        }),
+        ('관련 객체', {
+            'fields': ('project', 'phase')
+        }),
+        ('상태', {
+            'fields': ('is_read', 'read_at')
+        }),
+    )
+    
+    readonly_fields = ['created_at', 'read_at']
+
+@admin.register(SubscriptionPlan)
+class SubscriptionPlanAdmin(admin.ModelAdmin):
+    list_display = ['display_name', 'name', 'price', 'currency', 'billing_cycle', 'max_projects', 'max_team_members', 'is_active']
+    list_filter = ['name', 'billing_cycle', 'is_active', 'has_priority_support', 'has_advanced_analytics']
+    search_fields = ['display_name', 'name']
+    list_editable = ['price', 'is_active']
+    
+    fieldsets = (
+        ('기본 정보', {
+            'fields': ('name', 'display_name', 'price', 'currency', 'billing_cycle', 'is_active')
+        }),
+        ('기능 제한', {
+            'fields': ('max_projects', 'max_team_members', 'max_storage_gb')
+        }),
+        ('고급 기능', {
+            'fields': ('has_priority_support', 'has_advanced_analytics', 'has_api_access', 'has_custom_branding')
+        }),
+    )
+
+@admin.register(UserSubscription)
+class UserSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ['user', 'plan', 'status', 'start_date', 'end_date', 'auto_renew', 'projects_created', 'team_members_added']
+    list_filter = ['status', 'plan', 'auto_renew', 'start_date']
+    search_fields = ['user__username', 'user__email', 'payment_id']
+    list_editable = ['status', 'auto_renew']
+    
+    fieldsets = (
+        ('구독 정보', {
+            'fields': ('user', 'plan', 'status', 'auto_renew')
+        }),
+        ('결제 정보', {
+            'fields': ('payment_method', 'payment_id')
+        }),
+        ('구독 기간', {
+            'fields': ('start_date', 'end_date')
+        }),
+        ('사용량', {
+            'fields': ('projects_created', 'team_members_added', 'storage_used_mb')
+        }),
+    )
+    
+    readonly_fields = ['start_date', 'created_at', 'updated_at']
+
+@admin.register(AdCampaign)
+class AdCampaignAdmin(admin.ModelAdmin):
+    list_display = ['title', 'position', 'status', 'start_date', 'end_date', 'current_impressions', 'current_clicks', 'is_active']
+    list_filter = ['position', 'status', 'is_active', 'start_date', 'end_date']
+    search_fields = ['title', 'description', 'target_url']
+    list_editable = ['status', 'is_active']
+    
+    fieldsets = (
+        ('기본 정보', {
+            'fields': ('title', 'description', 'image_url', 'target_url', 'status', 'is_active')
+        }),
+        ('노출 설정', {
+            'fields': ('position', 'target_plans', 'target_pages')
+        }),
+        ('노출 제한', {
+            'fields': ('max_impressions', 'max_clicks', 'current_impressions', 'current_clicks')
+        }),
+        ('기간', {
+            'fields': ('start_date', 'end_date')
+        }),
+    )
+    
+    readonly_fields = ['current_impressions', 'current_clicks', 'created_at', 'updated_at']

@@ -1,0 +1,41 @@
+{
+    "designSystem": {
+      "componentStyles": {
+        "sidebar": {
+          "background": "#FFFFFF",
+          "iconColor": "#6B7280",
+          "activeColor": "#4F46E5",
+          "hoverBackground": "#EEF2FF"
+        },
+        "cards": {
+          "surfaceColor": "#FFFFFF",
+          "border": "#E5E7EB",
+          "radius": "12px",
+          "shadow": "0px 2px 6px rgba(0,0,0,0.08)"
+        },
+        "buttons": {
+          "primary": {
+            "default": {"bg": "#4F46E5", "text": "#FFFFFF"},
+            "hover": {"bg": "#4338CA"},
+            "disabled": {"bg": "#E5E7EB", "text": "#9CA3AF"}
+          },
+          "secondary": {
+            "default": {"bg": "transparent", "border": "#E5E7EB", "text": "#374151"},
+            "hover": {"bg": "#F3F4F6"}
+          }
+        },
+        "statusBadges": {
+          "completed": {"bg": "#D1FAE5", "text": "#065F46"},
+          "inReview": {"bg": "#DBEAFE", "text": "#1D4ED8"},
+          "inProgress": {"bg": "#E0E7FF", "text": "#4338CA"}
+        },
+        "typography": {
+          "heading": "#111827",
+          "body": "#374151",
+          "secondary": "#6B7280",
+          "disabled": "#9CA3AF"
+        }
+      }
+    }
+  }
+  

@@ -1,0 +1,168 @@
+{
+  "designSystem": {
+    "tokens": {
+      "surfaces": {
+        "appBackground": "#EFE5EB",
+        "panel": "#FCFCFD",
+        "subtle": "#F7F6F7"
+      },
+      "borders": {
+        "default": "#E9EBEC",
+        "muted": "#E4DCE0"
+      },
+      "text": {
+        "primary": "#2D2D2D",
+        "secondary": "#AEADB4",
+        "disabled": "#CBC9CB",
+        "inverse": "#FFFFFF"
+      },
+      "brand": {
+        "primary": "#7C8EDE",
+        "primarySoft": "#A8BEED",
+        "accentPink": "#F0B7CA"
+      },
+      "semantic": {
+        "success": { "bg": "#A3DDBF", "fg": "#2D2D2D", "strong": "#52B198" },
+        "warning": { "bg": "#F0A74A", "fg": "#2D2D2D" },
+        "danger": { "bg": "#D75872", "fg": "#FFFFFF" },
+        "info": { "bg": "#A8BEED", "fg": "#2D2D2D" }
+      },
+      "shadows": {
+        "card": "0 8px 24px rgba(0,0,0,0.08)",
+        "popover": "0 12px 32px rgba(0,0,0,0.12)",
+        "focusRing": "0 0 0 3px rgba(124,142,222,0.35)"
+      },
+      "radius": {
+        "sm": "8px",
+        "md": "12px",
+        "lg": "16px",
+        "pill": "9999px"
+      }
+    },
+    "componentStyles": {
+      "appShell": {
+        "background": "#EFE5EB",
+        "panelBackground": "#FCFCFD",
+        "shadow": "0 8px 24px rgba(0,0,0,0.08)",
+        "radii": "16px",
+        "contentPadding": "24px"
+      },
+      "sidebar": {
+        "surface": "#FFFFFF",
+        "borderRight": "#E9EBEC",
+        "item": {
+          "text": "#AEADB4",
+          "icon": "#AEADB4",
+          "hoverBg": "#F7F6F7",
+          "activeBg": "#EEF1FE",
+          "activeText": "#7C8EDE"
+        },
+        "sectionBadge": {
+          "bg": "#A8BEED",
+          "fg": "#2D2D2D"
+        }
+      },
+      "topbar": {
+        "surface": "#FFFFFF",
+        "borderBottom": "#E9EBEC",
+        "search": {
+          "bg": "#F7F6F7",
+          "placeholder": "#AEADB4",
+          "icon": "#AEADB4",
+          "focusRing": "0 0 0 3px rgba(124,142,222,0.35)"
+        },
+        "quickActions": {
+          "icon": "#2D2D2D",
+          "badgeBg": "#D75872"
+        }
+      },
+      "cards": {
+        "surfaceColor": "#FFFFFF",
+        "border": "#E9EBEC",
+        "radius": "12px",
+        "shadow": "0 8px 24px rgba(0,0,0,0.08)",
+        "header": { "titleColor": "#2D2D2D", "metaColor": "#AEADB4" }
+      },
+      "projectStats": {
+        "container": {
+          "background": "#FFFFFF",
+          "border": "#E9EBEC",
+          "radius": "12px",
+          "padding": "20px",
+          "shadow": "0 8px 24px rgba(0,0,0,0.08)"
+        },
+        "statItem": {
+          "background": "#F7F6F7",
+          "border": "#E4DCE0",
+          "radius": "8px",
+          "padding": "16px",
+          "text": "#2D2D2D",
+          "number": "#7C8EDE",
+          "label": "#AEADB4"
+        },
+        "progressBar": {
+          "background": "#E4DCE0",
+          "fill": "#7C8EDE",
+          "radius": "4px",
+          "height": "8px"
+        }
+      },
+      "buttons": {
+        "primary": {
+          "bg": "#7C8EDE",
+          "text": "#FFFFFF",
+          "hoverBg": "#6B7ED8",
+          "activeBg": "#5C70D4",
+          "focusRing": "0 0 0 3px rgba(124,142,222,0.35)",
+          "disabledBg": "#E9EBEC",
+          "disabledText": "#CBC9CB"
+        },
+        "secondary": {
+          "bg": "#FFFFFF",
+          "border": "#E9EBEC",
+          "text": "#2D2D2D",
+          "hoverBg": "#F7F6F7",
+          "activeBg": "#EFEFF1"
+        },
+        "ghost": {
+          "bg": "transparent",
+          "text": "#2D2D2D",
+          "hoverBg": "#F7F6F7"
+        }
+      },
+      "adSidebar": {
+        "container": {
+          "background": "#FFFFFF",
+          "border": "#E9EBEC",
+          "radius": "12px",
+          "padding": "16px",
+          "shadow": "0 8px 24px rgba(0,0,0,0.08)",
+          "margin": "16px 0"
+        },
+        "title": {
+          "color": "#2D2D2D",
+          "fontSize": "14px",
+          "fontWeight": "600",
+          "marginBottom": "12px"
+        },
+        "adItem": {
+          "background": "#F7F6F7",
+          "border": "#E4DCE0",
+          "radius": "8px",
+          "padding": "12px",
+          "marginBottom": "8px",
+          "hover": "#EEF1FE"
+        },
+        "adTitle": {
+          "color": "#2D2D2D",
+          "fontSize": "12px",
+          "fontWeight": "500"
+        },
+        "adDescription": {
+          "color": "#AEADB4",
+          "fontSize": "11px"
+        }
+      }
+    }
+  }
+}

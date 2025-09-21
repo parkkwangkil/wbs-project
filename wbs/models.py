@@ -3,12 +3,39 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 
+class UserProfile(models.Model):
+    """사용자 프로필 모델"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    bio = models.TextField(max_length=500, blank=True, verbose_name='자기소개')
+    phone = models.CharField(max_length=20, blank=True, verbose_name='전화번호')
+    department = models.CharField(max_length=100, blank=True, verbose_name='부서')
+    position = models.CharField(max_length=100, blank=True, verbose_name='직책')
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name='프로필 이미지')
+    birth_date = models.DateField(blank=True, null=True, verbose_name='생년월일')
+    location = models.CharField(max_length=100, blank=True, verbose_name='위치')
+    website = models.URLField(blank=True, verbose_name='웹사이트')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = '사용자 프로필'
+        verbose_name_plural = '사용자 프로필'
+
+    def __str__(self):
+        return f"{self.user.username}의 프로필"
+
+    @property
+    def full_name(self):
+        first_name = self.user.first_name or ""
+        last_name = self.user.last_name or ""
+        full_name = f"{first_name} {last_name}".strip()
+        return full_name if full_name else self.user.username
+
 class Project(models.Model):
     """프로젝트 모델"""
     STATUS_CHOICES = [
-        ('planning', '기획중'),
+        ('planning', '기획'),
         ('in_progress', '진행중'),
-        ('review', '검토중'),
         ('completed', '완료'),
         ('on_hold', '보류'),
         ('cancelled', '취소'),
@@ -21,303 +48,351 @@ class Project(models.Model):
         ('urgent', '긴급'),
     ]
     
+    COLOR_THEMES = [
+        ('blue', '파란색'),
+        ('green', '초록색'),
+        ('purple', '보라색'),
+        ('red', '빨간색'),
+        ('orange', '주황색'),
+        ('teal', '청록색'),
+        ('pink', '분홍색'),
+        ('indigo', '남색'),
+        ('yellow', '노란색'),
+        ('gray', '회색'),
+        ('cyan', '시안색'),
+        ('lime', '라임색'),
+    ]
+
     title = models.CharField(max_length=200, verbose_name='프로젝트명')
-    description = models.TextField(verbose_name='프로젝트 설명')
-    manager = models.ForeignKey(User, on_delete=models.CASCADE, related_name='managed_projects', verbose_name='프로젝트 매니저')
-    
+    description = models.TextField(verbose_name='설명')
+    manager = models.ForeignKey(User, on_delete=models.CASCADE, related_name='managed_projects', verbose_name='매니저')
     start_date = models.DateField(verbose_name='시작일')
     end_date = models.DateField(verbose_name='종료일')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='planning', verbose_name='상태')
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium', verbose_name='우선순위')
-    
-    budget = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='예산')
-    progress = models.IntegerField(
-        default=0, 
-        validators=[MinValueValidator(0), MaxValueValidator(100)],
-        verbose_name='진행률(%)'
-    )
-    
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='생성일')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='수정일')
-    
-    # 12가지 그라데이션 색상 중 하나 선택
-    GRADIENT_CHOICES = [
-        ('gradient-1', '파란-보라 그라데이션'),
-        ('gradient-2', '초록-청록 그라데이션'),
-        ('gradient-3', '핑크-빨강 그라데이션'),
-        ('gradient-4', '파란-하늘 그라데이션'),
-        ('gradient-5', '초록-민트 그라데이션'),
-        ('gradient-6', '핑크-노랑 그라데이션'),
-        ('gradient-7', '민트-핑크 그라데이션'),
-        ('gradient-8', '핑크-보라 그라데이션'),
-        ('gradient-9', '노랑-주황 그라데이션'),
-        ('gradient-10', '보라-핑크 그라데이션'),
-        ('gradient-11', '주황-핑크 그라데이션'),
-        ('gradient-12', '회색-파랑 그라데이션'),
-    ]
-    
-    color_theme = models.CharField(
-        max_length=20, 
-        choices=GRADIENT_CHOICES, 
-        default='gradient-1',
-        verbose_name='색상 테마'
-    )
-    
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium', verbose_name='우선순위')
+    budget = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, verbose_name='예산')
+    color_theme = models.CharField(max_length=20, choices=COLOR_THEMES, default='blue', verbose_name='색상 테마')
+    progress = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], verbose_name='진행률')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         verbose_name = '프로젝트'
-        verbose_name_plural = '프로젝트들'
+        verbose_name_plural = '프로젝트'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
+class ProjectPhase(models.Model):
+    """프로젝트 단계 모델"""
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='phases', verbose_name='프로젝트')
+    title = models.CharField(max_length=200, verbose_name='단계명')
+    description = models.TextField(verbose_name='설명')
+    start_date = models.DateField(verbose_name='시작일')
+    end_date = models.DateField(verbose_name='종료일')
+    order = models.PositiveIntegerField(default=0, verbose_name='순서')
+    is_completed = models.BooleanField(default=False, verbose_name='완료여부')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = '프로젝트 단계'
+        verbose_name_plural = '프로젝트 단계'
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.project.title} - {self.title}"
+
+class ApprovalLine(models.Model):
+    """승인 라인 모델"""
+    STATUS_CHOICES = [
+        ('pending', '대기'),
+        ('in_review', '검토중'),
+        ('approved', '승인'),
+        ('rejected', '거부'),
+    ]
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='approval_lines', verbose_name='프로젝트')
+    approver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='approvals', verbose_name='승인자')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name='상태')
+    comment = models.TextField(blank=True, verbose_name='승인 의견')
+    approved_at = models.DateTimeField(null=True, blank=True, verbose_name='승인일시')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = '승인 라인'
+        verbose_name_plural = '승인 라인'
+
+    def __str__(self):
+        return f"{self.project.title} - {self.approver.username}"
+
+class Comment(models.Model):
+    """댓글 모델"""
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='comments', verbose_name='프로젝트')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments', verbose_name='작성자')
+    content = models.TextField(verbose_name='내용')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = '댓글'
+        verbose_name_plural = '댓글'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.project.title} - {self.author.username}"
+
+class ProjectDocument(models.Model):
+    """프로젝트 문서 모델"""
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='documents', verbose_name='프로젝트')
+    title = models.CharField(max_length=200, verbose_name='문서명')
+    file = models.FileField(upload_to='project_documents/', verbose_name='파일')
+    description = models.TextField(blank=True, verbose_name='설명')
+    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='uploaded_documents', verbose_name='업로드자')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = '프로젝트 문서'
+        verbose_name_plural = '프로젝트 문서'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.project.title} - {self.title}"
+
+class DailyProgress(models.Model):
+    """일별 진행상황 모델"""
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='daily_progress', verbose_name='프로젝트')
+    date = models.DateField(verbose_name='날짜')
+    progress = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)], verbose_name='진행률')
+    notes = models.TextField(blank=True, verbose_name='메모')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = '일별 진행상황'
+        verbose_name_plural = '일별 진행상황'
+        unique_together = ['project', 'date']
+        ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.project.title} - {self.date}"
+
+class TaskChecklistItem(models.Model):
+    """작업 체크리스트 항목 모델"""
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='checklist_items', verbose_name='프로젝트')
+    title = models.CharField(max_length=200, verbose_name='작업명')
+    description = models.TextField(blank=True, verbose_name='설명')
+    is_completed = models.BooleanField(default=False, verbose_name='완료여부')
+    order = models.PositiveIntegerField(default=0, verbose_name='순서')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = '작업 체크리스트'
+        verbose_name_plural = '작업 체크리스트'
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.project.title} - {self.title}"
+
+
+class Notification(models.Model):
+    """알림 모델"""
+    NOTIFICATION_TYPE_CHOICES = [
+        ('project_update', '프로젝트 업데이트'),
+        ('approval_request', '승인 요청'),
+        ('approval_approved', '승인 완료'),
+        ('approval_rejected', '승인 거부'),
+        ('comment_added', '댓글 추가'),
+        ('deadline_approaching', '마감일 임박'),
+        ('task_assigned', '작업 할당'),
+        ('system', '시스템 알림'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', verbose_name='사용자')
+    title = models.CharField(max_length=200, verbose_name='제목')
+    message = models.TextField(verbose_name='메시지')
+    notification_type = models.CharField(max_length=30, choices=NOTIFICATION_TYPE_CHOICES, default='system', verbose_name='알림 유형')
+    is_read = models.BooleanField(default=False, verbose_name='읽음 여부')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications', verbose_name='관련 프로젝트')
+    phase = models.ForeignKey(ProjectPhase, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications', verbose_name='관련 단계')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='생성일')
+    read_at = models.DateTimeField(null=True, blank=True, verbose_name='읽은 시간')
+
+    class Meta:
+        verbose_name = '알림'
+        verbose_name_plural = '알림'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.title}"
+
+    def mark_as_read(self):
+        """알림을 읽음으로 표시"""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save()
+
+class SubscriptionPlan(models.Model):
+    """구독 플랜 모델"""
+    PLAN_CHOICES = [
+        ('free', '무료'),
+        ('basic', '베이직'),
+        ('premium', '프리미엄'),
+        ('enterprise', '엔터프라이즈'),
+    ]
+    
+    name = models.CharField(max_length=50, choices=PLAN_CHOICES, unique=True, verbose_name='플랜명')
+    display_name = models.CharField(max_length=100, verbose_name='표시명')
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='가격')
+    currency = models.CharField(max_length=3, default='KRW', verbose_name='통화')
+    billing_cycle = models.CharField(max_length=20, choices=[
+        ('monthly', '월간'),
+        ('yearly', '연간'),
+    ], default='monthly', verbose_name='결제 주기')
+    
+    # 기능 제한
+    max_projects = models.IntegerField(default=3, verbose_name='최대 프로젝트 수')
+    max_team_members = models.IntegerField(default=5, verbose_name='최대 팀원 수')
+    max_storage_gb = models.IntegerField(default=1, verbose_name='최대 저장공간(GB)')
+    has_priority_support = models.BooleanField(default=False, verbose_name='우선 지원')
+    has_advanced_analytics = models.BooleanField(default=False, verbose_name='고급 분석')
+    has_api_access = models.BooleanField(default=False, verbose_name='API 접근')
+    has_custom_branding = models.BooleanField(default=False, verbose_name='커스텀 브랜딩')
+    
+    is_active = models.BooleanField(default=True, verbose_name='활성화')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = '구독 플랜'
+        verbose_name_plural = '구독 플랜'
+        ordering = ['price']
+    
+    def __str__(self):
+        return f"{self.display_name} - {self.price} {self.currency}"
+
+class UserSubscription(models.Model):
+    """사용자 구독 모델"""
+    STATUS_CHOICES = [
+        ('active', '활성'),
+        ('cancelled', '취소됨'),
+        ('expired', '만료됨'),
+        ('pending', '대기중'),
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscription', verbose_name='사용자')
+    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.CASCADE, verbose_name='플랜')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active', verbose_name='상태')
+    
+    # 결제 정보
+    payment_method = models.CharField(max_length=50, blank=True, verbose_name='결제 방법')
+    payment_id = models.CharField(max_length=100, blank=True, verbose_name='결제 ID')
+    
+    # 구독 기간
+    start_date = models.DateTimeField(auto_now_add=True, verbose_name='시작일')
+    end_date = models.DateTimeField(verbose_name='종료일')
+    auto_renew = models.BooleanField(default=True, verbose_name='자동 갱신')
+    
+    # 사용량 추적
+    projects_created = models.IntegerField(default=0, verbose_name='생성된 프로젝트 수')
+    team_members_added = models.IntegerField(default=0, verbose_name='추가된 팀원 수')
+    storage_used_mb = models.IntegerField(default=0, verbose_name='사용된 저장공간(MB)')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = '사용자 구독'
+        verbose_name_plural = '사용자 구독'
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.plan.display_name}"
+    
+    def is_active(self):
+        """구독이 활성 상태인지 확인"""
+        return self.status == 'active' and timezone.now() < self.end_date
+    
+    def can_create_project(self):
+        """프로젝트 생성 가능 여부 확인"""
+        return self.projects_created < self.plan.max_projects
+    
+    def can_add_team_member(self):
+        """팀원 추가 가능 여부 확인"""
+        return self.team_members_added < self.plan.max_team_members
+    
+    def get_storage_usage_percentage(self):
+        """저장공간 사용률 계산"""
+        max_storage_mb = self.plan.max_storage_gb * 1024
+        return (self.storage_used_mb / max_storage_mb) * 100 if max_storage_mb > 0 else 0
+
+class AdCampaign(models.Model):
+    """광고 캠페인 모델"""
+    STATUS_CHOICES = [
+        ('active', '활성'),
+        ('paused', '일시정지'),
+        ('completed', '완료'),
+        ('draft', '초안'),
+    ]
+    
+    title = models.CharField(max_length=200, verbose_name='제목')
+    description = models.TextField(verbose_name='설명')
+    image_url = models.URLField(blank=True, verbose_name='이미지 URL')
+    target_url = models.URLField(verbose_name='타겟 URL')
+    
+    # 타겟팅
+    target_plans = models.ManyToManyField(SubscriptionPlan, blank=True, verbose_name='타겟 플랜')
+    target_pages = models.JSONField(default=list, verbose_name='타겟 페이지')
+    
+    # 노출 설정
+    position = models.CharField(max_length=50, choices=[
+        ('header', '헤더'),
+        ('sidebar', '사이드바'),
+        ('footer', '푸터'),
+        ('modal', '모달'),
+        ('banner', '배너'),
+    ], default='sidebar', verbose_name='위치')
+    
+    # 노출 제한
+    max_impressions = models.IntegerField(default=1000, verbose_name='최대 노출수')
+    current_impressions = models.IntegerField(default=0, verbose_name='현재 노출수')
+    max_clicks = models.IntegerField(default=100, verbose_name='최대 클릭수')
+    current_clicks = models.IntegerField(default=0, verbose_name='현재 클릭수')
+    
+    # 기간
+    start_date = models.DateTimeField(verbose_name='시작일')
+    end_date = models.DateTimeField(verbose_name='종료일')
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft', verbose_name='상태')
+    is_active = models.BooleanField(default=True, verbose_name='활성화')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = '광고 캠페인'
+        verbose_name_plural = '광고 캠페인'
         ordering = ['-created_at']
     
     def __str__(self):
         return self.title
     
-    @property
-    def duration_days(self):
-        """프로젝트 기간(일수) 계산"""
-        return (self.end_date - self.start_date).days + 1
+    def is_running(self):
+        """광고가 실행 중인지 확인"""
+        now = timezone.now()
+        return (self.status == 'active' and 
+                self.is_active and 
+                self.start_date <= now <= self.end_date and
+                self.current_impressions < self.max_impressions)
     
-    @property
-    def is_overdue(self):
-        """프로젝트 지연 여부"""
-        from datetime import date
-        return self.end_date < date.today() and self.status != 'completed'
-
-
-class ProjectPhase(models.Model):
-    """프로젝트 단계 모델"""
-    PHASE_STATUS_CHOICES = [
-        ('not_started', '시작 전'),
-        ('in_progress', '진행중'),
-        ('completed', '완료'),
-        ('blocked', '차단됨'),
-        ('cancelled', '취소'),
-    ]
+    def record_impression(self):
+        """노출 기록"""
+        if self.is_running():
+            self.current_impressions += 1
+            self.save()
     
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='phases', verbose_name='프로젝트')
-    phase_name = models.CharField(max_length=100, verbose_name='단계명')
-    description = models.TextField(verbose_name='단계 설명')
-    order = models.PositiveIntegerField(verbose_name='순서')
-    
-    start_date = models.DateField(verbose_name='시작일')
-    end_date = models.DateField(verbose_name='종료일')
-    actual_start_date = models.DateField(null=True, blank=True, verbose_name='실제 시작일')
-    actual_end_date = models.DateField(null=True, blank=True, verbose_name='실제 종료일')
-    
-    status = models.CharField(max_length=20, choices=PHASE_STATUS_CHOICES, default='not_started', verbose_name='상태')
-    progress = models.IntegerField(
-        default=0,
-        validators=[MinValueValidator(0), MaxValueValidator(100)],
-        verbose_name='진행률(%)'
-    )
-    
-    assignee = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='담당자')
-    estimated_hours = models.IntegerField(default=0, verbose_name='예상 작업시간(시간)')
-    actual_hours = models.IntegerField(default=0, verbose_name='실제 작업시간(시간)')
-    
-    # 단계별 승인 필요 여부
-    requires_approval = models.BooleanField(default=False, verbose_name='승인 필요')
-    
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='생성일')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='수정일')
-    
-    class Meta:
-        verbose_name = '프로젝트 단계'
-        verbose_name_plural = '프로젝트 단계들'
-        ordering = ['project', 'order']
-        unique_together = ['project', 'order']
-    
-    def __str__(self):
-        return f"{self.project.title} - {self.phase_name}"
-    
-    @property
-    def is_overdue(self):
-        """단계 지연 여부"""
-        from datetime import date
-        return self.end_date < date.today() and self.status != 'completed'
-
-
-class ApprovalLine(models.Model):
-    """승인 라인 모델"""
-    APPROVAL_STATUS_CHOICES = [
-        ('pending', '대기중'),
-        ('approved', '승인'),
-        ('rejected', '반려'),
-        ('cancelled', '취소'),
-    ]
-    
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='approval_lines', verbose_name='프로젝트')
-    phase = models.ForeignKey(ProjectPhase, on_delete=models.CASCADE, null=True, blank=True, related_name='approval_lines', verbose_name='단계')
-    
-    approver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='approvals', verbose_name='승인자')
-    order = models.PositiveIntegerField(verbose_name='승인 순서')
-    
-    status = models.CharField(max_length=20, choices=APPROVAL_STATUS_CHOICES, default='pending', verbose_name='승인 상태')
-    approved_at = models.DateTimeField(null=True, blank=True, verbose_name='승인일시')
-    comments = models.TextField(blank=True, verbose_name='승인 의견')
-    
-    # 결재 라인 관련
-    is_final_approver = models.BooleanField(default=False, verbose_name='최종 승인자')
-    
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='생성일')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='수정일')
-    
-    class Meta:
-        verbose_name = '승인 라인'
-        verbose_name_plural = '승인 라인들'
-        ordering = ['project', 'phase', 'order']
-        unique_together = ['project', 'phase', 'order']
-    
-    def __str__(self):
-        target = self.phase.phase_name if self.phase else self.project.title
-        return f"{target} - {self.approver.username} ({self.get_status_display()})"
-
-
-class Comment(models.Model):
-    """댓글 모델"""
-    COMMENT_TYPE_CHOICES = [
-        ('general', '일반'),
-        ('question', '질문'),
-        ('issue', '이슈'),
-        ('suggestion', '제안'),
-    ]
-    
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='comments', verbose_name='프로젝트')
-    phase = models.ForeignKey(ProjectPhase, on_delete=models.CASCADE, null=True, blank=True, related_name='comments', verbose_name='단계')
-    
-    author = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='작성자')
-    content = models.TextField(verbose_name='댓글 내용')
-    comment_type = models.CharField(max_length=20, choices=COMMENT_TYPE_CHOICES, default='general', verbose_name='댓글 유형')
-    
-    # 대댓글 기능
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies', verbose_name='상위 댓글')
-    
-    # 중요 표시
-    is_important = models.BooleanField(default=False, verbose_name='중요 표시')
-    
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='작성일')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='수정일')
-    
-    class Meta:
-        verbose_name = '댓글'
-        verbose_name_plural = '댓글들'
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        target = self.phase.phase_name if self.phase else self.project.title
-        return f"{target} - {self.author.username}: {self.content[:50]}..."
-
-
-class ProjectDocument(models.Model):
-    """프로젝트 문서 모델"""
-    DOCUMENT_TYPE_CHOICES = [
-        ('proposal', '기획서'),
-        ('specification', '명세서'),
-        ('design', '설계서'),
-        ('manual', '매뉴얼'),
-        ('report', '보고서'),
-        ('other', '기타'),
-    ]
-    
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='documents', verbose_name='프로젝트')
-    phase = models.ForeignKey(ProjectPhase, on_delete=models.CASCADE, null=True, blank=True, related_name='documents', verbose_name='단계')
-    
-    title = models.CharField(max_length=200, verbose_name='문서 제목')
-    document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPE_CHOICES, default='other', verbose_name='문서 유형')
-    content = models.TextField(verbose_name='문서 내용')
-    
-    author = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='작성자')
-    version = models.CharField(max_length=10, default='1.0', verbose_name='버전')
-    
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='생성일')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='수정일')
-    
-    class Meta:
-        verbose_name = '프로젝트 문서'
-        verbose_name_plural = '프로젝트 문서들'
-        ordering = ['-updated_at']
-    
-    def __str__(self):
-        return f"{self.project.title} - {self.title} (v{self.version})"
-
-
-class DailyProgress(models.Model):
-    """일별 진행사항 체크 모델"""
-    CHECK_STATUS_CHOICES = [
-        ('not_started', '시작 전'),
-        ('in_progress', '진행중'),
-        ('completed', '완료'),
-        ('blocked', '차단됨'),
-        ('delayed', '지연'),
-    ]
-    
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='daily_progress', verbose_name='프로젝트')
-    phase = models.ForeignKey(ProjectPhase, on_delete=models.CASCADE, null=True, blank=True, related_name='daily_progress', verbose_name='단계')
-    
-    date = models.DateField(verbose_name='날짜')
-    status = models.CharField(max_length=20, choices=CHECK_STATUS_CHOICES, default='not_started', verbose_name='진행 상태')
-    
-    # 체크 항목들
-    is_checked = models.BooleanField(default=False, verbose_name='체크 완료')
-    progress_percentage = models.IntegerField(
-        default=0,
-        validators=[MinValueValidator(0), MaxValueValidator(100)],
-        verbose_name='당일 진행률(%)'
-    )
-    
-    # 메모 및 이슈
-    memo = models.TextField(blank=True, verbose_name='메모')
-    issues = models.TextField(blank=True, verbose_name='이슈사항')
-    
-    # 작업 시간
-    worked_hours = models.DecimalField(max_digits=4, decimal_places=1, default=0, verbose_name='작업 시간')
-    
-    # 담당자
-    assignee = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='담당자')
-    
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='생성일')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='수정일')
-    
-    class Meta:
-        verbose_name = '일별 진행사항'
-        verbose_name_plural = '일별 진행사항들'
-        unique_together = ['project', 'phase', 'date', 'assignee']
-        ordering = ['-date']
-    
-    def __str__(self):
-        target = self.phase.phase_name if self.phase else self.project.title
-        return f"{target} - {self.date} ({self.get_status_display()})"
-    
-    @property
-    def is_today(self):
-        """오늘 날짜인지 확인"""
-        from datetime import date
-        return self.date == date.today()
-    
-    @property
-    def is_weekend(self):
-        """주말인지 확인"""
-        return self.date.weekday() >= 5  # 5=토요일, 6=일요일
-
-
-class TaskChecklistItem(models.Model):
-    """작업 체크리스트 항목 모델"""
-    daily_progress = models.ForeignKey(DailyProgress, on_delete=models.CASCADE, related_name='checklist_items', verbose_name='일별 진행사항')
-    
-    task_name = models.CharField(max_length=200, verbose_name='작업명')
-    is_completed = models.BooleanField(default=False, verbose_name='완료 여부')
-    priority = models.IntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(5)], verbose_name='우선순위')
-    
-    estimated_time = models.IntegerField(default=60, verbose_name='예상 소요시간(분)')
-    actual_time = models.IntegerField(default=0, verbose_name='실제 소요시간(분)')
-    
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='생성일')
-    completed_at = models.DateTimeField(null=True, blank=True, verbose_name='완료일시')
-    
-    class Meta:
-        verbose_name = '작업 체크리스트'
-        verbose_name_plural = '작업 체크리스트들'
-        ordering = ['priority', 'created_at']
-    
-    def __str__(self):
-        status = "✓" if self.is_completed else "○"
-        return f"{status} {self.task_name}"
+    def record_click(self):
+        """클릭 기록"""
+        if self.is_running() and self.current_clicks < self.max_clicks:
+            self.current_clicks += 1
+            self.save()

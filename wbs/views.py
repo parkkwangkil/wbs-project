@@ -1,40 +1,74 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db.models import Q, Count, Avg
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
-from datetime import datetime, timedelta
-from .models import Project, ProjectPhase, ApprovalLine, Comment, ProjectDocument, DailyProgress, TaskChecklistItem
-from .forms import ProjectForm, ProjectPhaseForm, CommentForm, DailyProgressForm
+from django.db.models import Q, F
+from .models import Project, ProjectPhase, ApprovalLine, Comment, ProjectDocument, DailyProgress, TaskChecklistItem, UserProfile, Notification, SubscriptionPlan, UserSubscription, AdCampaign
+from .forms import ProjectForm, ProjectPhaseForm, CommentForm, DailyProgressForm, TaskChecklistItemForm, UserProfileForm, UserForm, SubscriptionPlanForm, UserSubscriptionForm, AdCampaignForm
+from datetime import datetime, timedelta, date
+import json
 
+def custom_login(request):
+    """커스텀 로그인 페이지"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        if username and password:
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                messages.success(request, '로그인에 성공했습니다!')
+                return redirect('wbs:home')
+            else:
+                messages.error(request, '아이디 또는 비밀번호가 올바르지 않습니다.')
+        else:
+            messages.error(request, '아이디와 비밀번호를 입력해주세요.')
+    
+    return render(request, 'wbs/custom_login.html')
+
+def custom_logout(request):
+    """커스텀 로그아웃 페이지"""
+    if request.user.is_authenticated:
+        logout(request)
+        return render(request, 'wbs/logout_success.html')
+    else:
+        return redirect('wbs:custom_login')
+
+@login_required
 def home(request):
     """홈페이지 뷰"""
     # 통계 데이터
     total_projects = Project.objects.count()
     active_projects = Project.objects.filter(status='in_progress').count()
     completed_projects = Project.objects.filter(status='completed').count()
+    total_comments = Comment.objects.count()
     
-    # 최근 프로젝트들 (각 그라데이션 테마별로)
-    recent_projects = Project.objects.select_related('manager').order_by('-created_at')[:8]
+    # 최근 프로젝트 (최대 5개)
+    recent_projects = Project.objects.order_by('-created_at')[:5]
     
-    # 승인 대기 중인 항목들
-    pending_approvals = ApprovalLine.objects.filter(
-        status='pending'
-    ).select_related('project', 'phase', 'approver').order_by('created_at')[:5]
+    # 승인 대기 중인 프로젝트
+    pending_approvals = Project.objects.filter(
+        Q(approval_lines__status='pending') | Q(approval_lines__status='in_review')
+    ).distinct()[:5]
     
-    # 이번 달 진행 상황
-    today = timezone.now().date()
-    month_start = today.replace(day=1)
-    month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
-    
+    # 월별 프로젝트 통계
+    today = timezone.now()
     monthly_projects = Project.objects.filter(
-        Q(start_date__lte=month_end) & Q(end_date__gte=month_start)
-    ).order_by('start_date')
+        start_date__year=today.year,
+        start_date__month=today.month
+    )
     
     context = {
         'total_projects': total_projects,
         'active_projects': active_projects,
         'completed_projects': completed_projects,
+        'total_comments': total_comments,
         'recent_projects': recent_projects,
         'pending_approvals': pending_approvals,
         'monthly_projects': monthly_projects,
@@ -44,415 +78,559 @@ def home(request):
     return render(request, 'wbs/home.html', context)
 
 def project_list(request):
-    """프로젝트 목록 뷰"""
-    projects = Project.objects.select_related('manager').prefetch_related('phases').order_by('-created_at')
-    
-    # 필터링
-    status_filter = request.GET.get('status')
-    priority_filter = request.GET.get('priority')
-    search_query = request.GET.get('search')
-    
-    if status_filter:
-        projects = projects.filter(status=status_filter)
-    if priority_filter:
-        projects = projects.filter(priority=priority_filter)
-    if search_query:
-        projects = projects.filter(
-            Q(title__icontains=search_query) | 
-            Q(description__icontains=search_query)
-        )
-    
-    # 상태 및 우선순위 선택지
-    status_choices = Project.STATUS_CHOICES
-    priority_choices = Project.PRIORITY_CHOICES
-    
-    context = {
-        'projects': projects,
-        'status_choices': status_choices,
-        'priority_choices': priority_choices,
-        'current_status': status_filter,
-        'current_priority': priority_filter,
-        'search_query': search_query,
-    }
-    
-    return render(request, 'wbs/project_list.html', context)
+    """프로젝트 목록"""
+    projects = Project.objects.all().order_by('-created_at')
+    return render(request, 'wbs/project_list.html', {'projects': projects})
 
 def project_detail(request, pk):
-    """프로젝트 상세 뷰"""
+    """프로젝트 상세"""
     project = get_object_or_404(Project, pk=pk)
-    phases = project.phases.order_by('order')
-    approval_lines = project.approval_lines.select_related('approver').order_by('order')
-    comments = project.comments.select_related('author').order_by('-created_at')
-    documents = project.documents.select_related('author').order_by('-updated_at')
+    phases = project.phases.all().order_by('order')
+    comments = project.comments.all().order_by('-created_at')
+    documents = project.documents.all().order_by('-created_at')
     
-    # 댓글 폼 처리
-    if request.method == 'POST' and 'add_comment' in request.POST:
-        comment_form = CommentForm(request.POST)
-        if comment_form.is_valid():
-            comment = comment_form.save(commit=False)
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
             comment.project = project
             comment.author = request.user
             comment.save()
             messages.success(request, '댓글이 추가되었습니다.')
             return redirect('wbs:project_detail', pk=pk)
     else:
-        comment_form = CommentForm()
-    
-    # 프로젝트 진행률 계산
-    if phases.exists():
-        avg_progress = phases.aggregate(avg_progress=Avg('progress'))['avg_progress'] or 0
-        project.progress = int(avg_progress)
-        project.save()
+        form = CommentForm()
     
     context = {
         'project': project,
         'phases': phases,
-        'approval_lines': approval_lines,
         'comments': comments,
         'documents': documents,
-        'comment_form': comment_form,
+        'form': form,
     }
     
     return render(request, 'wbs/project_detail.html', context)
 
-@login_required
 def project_create(request):
-    """프로젝트 생성 뷰"""
+    """프로젝트 생성"""
+    # 구독 플랜 확인
+    user_subscription = getattr(request.user, 'subscription', None)
+    if user_subscription and not user_subscription.can_create_project():
+        messages.error(request, f'프로젝트 생성 한도에 도달했습니다. 현재 플랜에서는 최대 {user_subscription.plan.max_projects}개의 프로젝트만 생성할 수 있습니다.')
+        return redirect('wbs:subscription_plans')
+    
     if request.method == 'POST':
         form = ProjectForm(request.POST)
         if form.is_valid():
             project = form.save(commit=False)
             project.manager = request.user
             project.save()
-            messages.success(request, f'프로젝트 "{project.title}"가 생성되었습니다.')
+            
+            # 프로젝트 생성 수 증가
+            if user_subscription:
+                user_subscription.projects_created += 1
+                user_subscription.save()
+            
+            messages.success(request, '프로젝트가 생성되었습니다.')
             return redirect('wbs:project_detail', pk=project.pk)
     else:
         form = ProjectForm()
     
     context = {
         'form': form,
-        'title': '새 프로젝트 생성',
+        'user_subscription': user_subscription,
     }
-    
     return render(request, 'wbs/project_form.html', context)
 
-@login_required
 def project_edit(request, pk):
-    """프로젝트 수정 뷰"""
+    """프로젝트 편집"""
     project = get_object_or_404(Project, pk=pk)
-    
-    # 권한 확인
-    if project.manager != request.user and not request.user.is_staff:
-        messages.error(request, '프로젝트를 수정할 권한이 없습니다.')
-        return redirect('wbs:project_detail', pk=pk)
     
     if request.method == 'POST':
         form = ProjectForm(request.POST, instance=project)
         if form.is_valid():
             form.save()
-            messages.success(request, f'프로젝트 "{project.title}"가 수정되었습니다.')
+            messages.success(request, '프로젝트가 수정되었습니다.')
             return redirect('wbs:project_detail', pk=pk)
     else:
         form = ProjectForm(instance=project)
     
-    context = {
-        'form': form,
-        'project': project,
-        'title': f'프로젝트 수정: {project.title}',
-    }
-    
-    return render(request, 'wbs/project_form.html', context)
+    return render(request, 'wbs/project_form.html', {'form': form})
 
-@login_required
 def phase_create(request, project_pk):
-    """프로젝트 단계 생성 뷰"""
+    """프로젝트 단계 생성"""
     project = get_object_or_404(Project, pk=project_pk)
-    
-    # 권한 확인
-    if project.manager != request.user and not request.user.is_staff:
-        messages.error(request, '단계를 생성할 권한이 없습니다.')
-        return redirect('wbs:project_detail', pk=project_pk)
     
     if request.method == 'POST':
         form = ProjectPhaseForm(request.POST)
         if form.is_valid():
             phase = form.save(commit=False)
             phase.project = project
-            # 자동으로 순서 설정
-            last_order = project.phases.aggregate(
-                max_order=Count('order')
-            )['max_order'] or 0
-            phase.order = last_order + 1
             phase.save()
-            messages.success(request, f'단계 "{phase.phase_name}"가 추가되었습니다.')
+            messages.success(request, '프로젝트 단계가 추가되었습니다.')
             return redirect('wbs:project_detail', pk=project_pk)
+        else:
+            messages.error(request, '폼에 오류가 있습니다. 다시 확인해주세요.')
     else:
         form = ProjectPhaseForm()
     
-    context = {
-        'form': form,
-        'project': project,
-        'title': f'새 단계 추가: {project.title}',
-    }
-    
-    return render(request, 'wbs/phase_form.html', context)
+    return render(request, 'wbs/phase_form.html', {'form': form, 'project': project})
 
-@login_required
-def approve_request(request, approval_pk):
-    """승인 요청 처리 뷰"""
-    approval = get_object_or_404(ApprovalLine, pk=approval_pk)
-    
-    # 권한 확인
-    if approval.approver != request.user:
-        messages.error(request, '승인할 권한이 없습니다.')
-        return redirect('wbs:home')
+def phase_edit(request, project_pk, phase_pk):
+    """프로젝트 단계 편집"""
+    project = get_object_or_404(Project, pk=project_pk)
+    phase = get_object_or_404(ProjectPhase, pk=phase_pk, project=project)
     
     if request.method == 'POST':
-        action = request.POST.get('action')
-        comments = request.POST.get('comments', '')
-        
-        if action == 'approve':
-            approval.status = 'approved'
-            approval.approved_at = timezone.now()
-            approval.comments = comments
-            approval.save()
-            messages.success(request, '승인이 완료되었습니다.')
-        elif action == 'reject':
-            approval.status = 'rejected'
-            approval.comments = comments
-            approval.save()
-            messages.success(request, '반려 처리되었습니다.')
-    
-    target = approval.phase if approval.phase else approval.project
-    return redirect('wbs:project_detail', pk=approval.project.pk)
-
-def calendar_view(request):
-    """월별 캘린더 뷰"""
-    # 현재 월 또는 요청된 월
-    year = int(request.GET.get('year', timezone.now().year))
-    month = int(request.GET.get('month', timezone.now().month))
-    
-    # 해당 월의 프로젝트들
-    month_start = datetime(year, month, 1).date()
-    if month == 12:
-        month_end = datetime(year + 1, 1, 1).date() - timedelta(days=1)
+        form = ProjectPhaseForm(request.POST, instance=phase)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '프로젝트 단계가 수정되었습니다.')
+            return redirect('wbs:project_detail', pk=project_pk)
+        else:
+            messages.error(request, '폼에 오류가 있습니다. 다시 확인해주세요.')
     else:
-        month_end = datetime(year, month + 1, 1).date() - timedelta(days=1)
+        form = ProjectPhaseForm(instance=phase)
     
+    return render(request, 'wbs/phase_form.html', {'form': form, 'project': project})
+
+def calendar(request):
+    """캘린더 뷰"""
+    import calendar as cal_module
+    from datetime import datetime, date
+    
+    today = timezone.now()
+    year = int(request.GET.get('year', today.year))
+    month = int(request.GET.get('month', today.month))
+    
+    # 월별 프로젝트들 (시작일 또는 종료일이 해당 월에 포함되는 프로젝트들)
     projects = Project.objects.filter(
-        Q(start_date__lte=month_end) & Q(end_date__gte=month_start)
-    ).select_related('manager')
+        Q(start_date__year=year, start_date__month=month) |
+        Q(end_date__year=year, end_date__month=month) |
+        Q(start_date__lte=date(year, month, 1), end_date__gte=date(year, month, cal_module.monthrange(year, month)[1]))
+    ).order_by('start_date')
     
-    phases = ProjectPhase.objects.filter(
-        Q(start_date__lte=month_end) & Q(end_date__gte=month_start)
-    ).select_related('project')
-    
-    # 캘린더 데이터 구성
-    calendar_data = {}
+    # 해당 월의 일별 프로젝트 매핑
+    daily_projects = {}
     for project in projects:
-        start_in_month = max(project.start_date, month_start)
-        end_in_month = min(project.end_date, month_end)
+        # 프로젝트가 해당 월에 걸쳐있는 모든 날짜
+        start_date = max(project.start_date, date(year, month, 1))
+        end_date = min(project.end_date, date(year, month, cal_module.monthrange(year, month)[1]))
         
-        current_date = start_in_month
-        while current_date <= end_in_month:
-            if current_date not in calendar_data:
-                calendar_data[current_date] = []
-            calendar_data[current_date].append({
-                'type': 'project',
-                'title': project.title,
-                'color_theme': project.color_theme,
-                'pk': project.pk,
-            })
+        current_date = start_date
+        while current_date <= end_date:
+            if current_date not in daily_projects:
+                daily_projects[current_date] = []
+            daily_projects[current_date].append(project)
             current_date += timedelta(days=1)
     
-    for phase in phases:
-        start_in_month = max(phase.start_date, month_start)
-        end_in_month = min(phase.end_date, month_end)
-        
-        current_date = start_in_month
-        while current_date <= end_in_month:
-            if current_date not in calendar_data:
-                calendar_data[current_date] = []
-            calendar_data[current_date].append({
-                'type': 'phase',
-                'title': f"{phase.project.title} - {phase.phase_name}",
-                'color_theme': phase.project.color_theme,
-                'pk': phase.project.pk,
-            })
-            current_date += timedelta(days=1)
+    # 템플릿에서 사용할 수 있도록 날짜별 프로젝트 리스트 생성
+    daily_projects_list = []
+    for project in projects:
+        daily_projects_list.append(project)
+    
+    # 캘린더 데이터 생성
+    cal = cal_module.monthcalendar(year, month)
+    month_name = cal_module.month_name[month]
     
     context = {
-        'calendar_data': calendar_data,
-        'current_year': year,
-        'current_month': month,
-        'month_name': month_start.strftime('%Y년 %m월'),
-        'prev_month': (month_start - timedelta(days=1)).replace(day=1),
-        'next_month': month_end + timedelta(days=1),
+        'year': year,
+        'month': month,
+        'month_name': month_name,
+        'projects': projects,
+        'daily_projects': daily_projects,
+        'daily_projects_list': daily_projects_list,
+        'calendar': cal,
+        'today': today,
+        'prev_month': month - 1 if month > 1 else 12,
+        'prev_year': year if month > 1 else year - 1,
+        'next_month': month + 1 if month < 12 else 1,
+        'next_year': year if month < 12 else year + 1,
     }
     
     return render(request, 'wbs/calendar.html', context)
 
-
 def progress_calendar(request, project_pk):
-    """프로젝트 진행사항 캘린더 뷰 (1-31일 체크 형태)"""
+    """프로젝트 진행상황 캘린더 (1-31일)"""
     project = get_object_or_404(Project, pk=project_pk)
     
-    # 현재 월 또는 요청된 월
-    year = int(request.GET.get('year', timezone.now().year))
-    month = int(request.GET.get('month', timezone.now().month))
+    # 해당 프로젝트의 일별 진행상황
+    daily_progress = DailyProgress.objects.filter(project=project).order_by('date')
     
-    # 해당 월의 첫날과 마지막날
-    month_start = datetime(year, month, 1).date()
-    if month == 12:
-        month_end = datetime(year + 1, 1, 1).date() - timedelta(days=1)
-    else:
-        month_end = datetime(year, month + 1, 1).date() - timedelta(days=1)
-    
-    # 해당 월의 모든 일별 진행사항
-    daily_progress_data = {}
-    progress_items = DailyProgress.objects.filter(
-        project=project,
-        date__range=[month_start, month_end]
-    ).select_related('phase', 'assignee').prefetch_related('checklist_items')
-    
-    for item in progress_items:
-        if item.date not in daily_progress_data:
-            daily_progress_data[item.date] = []
-        daily_progress_data[item.date].append(item)
-    
-    # 캘린더 그리드 생성 (1-31일)
-    calendar_grid = []
-    current_date = month_start
-    week = []
-    
-    # 월 시작 전 빈 칸 추가
-    start_weekday = month_start.weekday()  # 0=월요일, 6=일요일
-    for _ in range(start_weekday):
-        week.append(None)
-    
-    while current_date <= month_end:
-        # 해당 날짜의 진행사항 데이터
-        day_data = {
-            'date': current_date,
-            'day_number': current_date.day,
-            'is_weekend': current_date.weekday() >= 5,
-            'is_today': current_date == timezone.now().date(),
-            'progress_items': daily_progress_data.get(current_date, []),
-            'overall_progress': 0,
-            'status_counts': {
-                'completed': 0,
-                'in_progress': 0,
-                'not_started': 0,
-                'blocked': 0,
-                'delayed': 0,
-            }
-        }
-        
-        # 해당 날짜의 전체 진행률 계산
-        if day_data['progress_items']:
-            total_progress = sum(item.progress_percentage for item in day_data['progress_items'])
-            day_data['overall_progress'] = total_progress // len(day_data['progress_items'])
-            
-            # 상태별 카운트
-            for item in day_data['progress_items']:
-                if item.status in day_data['status_counts']:
-                    day_data['status_counts'][item.status] += 1
-        
-        week.append(day_data)
-        
-        # 일주일이 완성되면 그리드에 추가
-        if len(week) == 7:
-            calendar_grid.append(week)
-            week = []
-        
-        current_date += timedelta(days=1)
-    
-    # 마지막 주의 빈 칸 채우기
-    while len(week) < 7:
-        week.append(None)
-    if week:
-        calendar_grid.append(week)
-    
-    # 프로젝트 단계들
-    phases = project.phases.order_by('order')
-    
-    context = {
-        'project': project,
-        'calendar_grid': calendar_grid,
-        'current_year': year,
-        'current_month': month,
-        'month_name': month_start.strftime('%Y년 %m월'),
-        'prev_month': (month_start - timedelta(days=1)).replace(day=1),
-        'next_month': month_end + timedelta(days=1),
-        'phases': phases,
-        'weekdays': ['월', '화', '수', '목', '금', '토', '일'],
-    }
-    
-    return render(request, 'wbs/progress_calendar.html', context)
-
-
-@login_required
-def daily_progress_update(request, project_pk, date_str):
-    """일별 진행사항 업데이트"""
-    project = get_object_or_404(Project, pk=project_pk)
-    
-    try:
-        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-    except ValueError:
-        messages.error(request, '잘못된 날짜 형식입니다.')
-        return redirect('wbs:progress_calendar', project_pk=project_pk)
-    
-    # 해당 날짜의 진행사항 가져오기 또는 생성
-    daily_progress, created = DailyProgress.objects.get_or_create(
-        project=project,
-        date=date_obj,
-        assignee=request.user,
-        defaults={
-            'status': 'not_started',
-            'progress_percentage': 0,
-        }
-    )
-    
-    if request.method == 'POST':
-        form = DailyProgressForm(request.POST, instance=daily_progress)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f'{date_obj} 진행사항이 업데이트되었습니다.')
-            return redirect('wbs:progress_calendar', project_pk=project_pk)
-    else:
-        form = DailyProgressForm(instance=daily_progress)
-    
-    # 해당 날짜의 체크리스트 항목들
-    checklist_items = daily_progress.checklist_items.all()
+    # 체크리스트 항목들
+    checklist_items = TaskChecklistItem.objects.filter(project=project).order_by('order')
     
     context = {
         'project': project,
         'daily_progress': daily_progress,
-        'form': form,
-        'date_obj': date_obj,
         'checklist_items': checklist_items,
     }
     
-    return render(request, 'wbs/daily_progress_form.html', context)
+    return render(request, 'wbs/progress_calendar.html', context)
 
+def daily_progress_update(request, project_pk, date_str=None):
+    """일별 진행상황 업데이트"""
+    project = get_object_or_404(Project, pk=project_pk)
+    
+    if request.method == 'POST':
+        # POST 요청: 데이터 저장
+        if not date_str:
+            date_str = request.POST.get('date')
+        
+        progress = request.POST.get('progress', 0)
+        notes = request.POST.get('notes', '')
+        
+        try:
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            daily_progress, created = DailyProgress.objects.get_or_create(
+                project=project,
+                date=date,
+                defaults={'progress': int(progress), 'notes': notes}
+            )
+            
+            if not created:
+                daily_progress.progress = int(progress)
+                daily_progress.notes = notes
+                daily_progress.save()
+            
+            return JsonResponse({'success': True, 'message': '진행상황이 저장되었습니다.'})
+        except ValueError:
+            return JsonResponse({'success': False, 'message': '잘못된 날짜 형식입니다.'})
+    
+    else:
+        # GET 요청: 폼 표시
+        if not date_str:
+            return redirect('wbs:progress_calendar', project_pk=project_pk)
+        
+        try:
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            daily_progress = DailyProgress.objects.filter(project=project, date=date).first()
+            
+            context = {
+                'project': project,
+                'date': date,
+                'date_str': date_str,
+                'daily_progress': daily_progress,
+            }
+            return render(request, 'wbs/daily_progress_form.html', context)
+        except ValueError:
+            return redirect('wbs:progress_calendar', project_pk=project_pk)
+
+@require_POST
+def checklist_toggle(request, project_pk):
+    """체크리스트 항목 토글"""
+    project = get_object_or_404(Project, pk=project_pk)
+    item_id = request.POST.get('item_id')
+    is_completed = request.POST.get('is_completed') == 'true'
+    
+    try:
+        item = TaskChecklistItem.objects.get(id=item_id, project=project)
+        item.is_completed = is_completed
+        item.save()
+        
+        return JsonResponse({'success': True, 'message': '체크리스트가 업데이트되었습니다.'})
+    except TaskChecklistItem.DoesNotExist:
+        return JsonResponse({'success': False, 'message': '항목을 찾을 수 없습니다.'})
+
+def approve_request(request, approval_pk):
+    """승인 요청 처리"""
+    approval = get_object_or_404(ApprovalLine, pk=approval_pk)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'approve':
+            approval.status = 'approved'
+            approval.approved_by = request.user
+            approval.approved_at = timezone.now()
+            approval.save()
+            messages.success(request, '승인되었습니다.')
+        elif action == 'reject':
+            approval.status = 'rejected'
+            approval.approved_by = request.user
+            approval.approved_at = timezone.now()
+            approval.save()
+            messages.success(request, '거부되었습니다.')
+        
+        return redirect('wbs:project_detail', pk=approval.project.pk)
+    
+    return render(request, 'wbs/approval_form.html', {'approval': approval})
+
+def profile_view(request):
+    """사용자 프로필 보기"""
+    try:
+        profile = request.user.profile
+    except UserProfile.DoesNotExist:
+        profile = UserProfile.objects.create(user=request.user)
+    
+    context = {
+        'profile': profile,
+        'user': request.user,
+    }
+    return render(request, 'wbs/profile.html', context)
+
+def profile_edit(request):
+    """사용자 프로필 편집"""
+    try:
+        profile = request.user.profile
+    except UserProfile.DoesNotExist:
+        profile = UserProfile.objects.create(user=request.user)
+    
+    if request.method == 'POST':
+        user_form = UserForm(request.POST, instance=request.user)
+        profile_form = UserProfileForm(request.POST, request.FILES, instance=profile)
+        
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            messages.success(request, '프로필이 성공적으로 업데이트되었습니다.')
+            return redirect('wbs:profile')
+    else:
+        user_form = UserForm(instance=request.user)
+        profile_form = UserProfileForm(instance=profile)
+    
+    context = {
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'profile': profile,
+    }
+    return render(request, 'wbs/profile_edit.html', context)
+
+def user_list(request):
+    """사용자 목록"""
+    users = User.objects.all().order_by('username')
+    context = {
+        'users': users,
+    }
+    return render(request, 'wbs/user_list.html', context)
+
+def user_detail(request, user_id):
+    """사용자 상세 정보"""
+    user = get_object_or_404(User, id=user_id)
+    try:
+        profile = user.profile
+    except UserProfile.DoesNotExist:
+        profile = None
+    
+    # 사용자가 관리하는 프로젝트들
+    managed_projects = Project.objects.filter(manager=user).order_by('-created_at')[:5]
+    
+    # 사용자가 작성한 댓글들
+    recent_comments = Comment.objects.filter(author=user).order_by('-created_at')[:5]
+    
+    context = {
+        'user': user,
+        'profile': profile,
+        'managed_projects': managed_projects,
+        'recent_comments': recent_comments,
+    }
+    return render(request, 'wbs/user_detail.html', context)
 
 @login_required
-def checklist_toggle(request, item_pk):
-    """체크리스트 항목 완료/미완료 토글"""
-    item = get_object_or_404(TaskChecklistItem, pk=item_pk)
+def notifications(request):
+    """알림 목록"""
+    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    unread_count = notifications.filter(is_read=False).count()
     
-    # 권한 확인
-    if item.daily_progress.assignee != request.user and not request.user.is_staff:
-        messages.error(request, '권한이 없습니다.')
-        return redirect('wbs:progress_calendar', project_pk=item.daily_progress.project.pk)
+    context = {
+        'notifications': notifications,
+        'unread_count': unread_count,
+    }
+    return render(request, 'wbs/notifications.html', context)
+
+@login_required
+@require_POST
+def mark_notification_read(request, notification_id):
+    """알림을 읽음으로 표시"""
+    try:
+        notification = Notification.objects.get(id=notification_id, user=request.user)
+        notification.mark_as_read()
+        return JsonResponse({'success': True})
+    except Notification.DoesNotExist:
+        return JsonResponse({'success': False, 'error': '알림을 찾을 수 없습니다.'})
+
+@login_required
+@require_POST
+def mark_all_notifications_read(request):
+    """모든 알림을 읽음으로 표시"""
+    Notification.objects.filter(user=request.user, is_read=False).update(
+        is_read=True, 
+        read_at=timezone.now()
+    )
+    return JsonResponse({'success': True})
+
+@login_required
+def get_notifications_count(request):
+    """읽지 않은 알림 개수 조회 (AJAX)"""
+    unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
+    return JsonResponse({'unread_count': unread_count})
+
+# 구독 관련 뷰들
+@login_required
+def subscription_plans(request):
+    """구독 플랜 목록"""
+    plans = SubscriptionPlan.objects.filter(is_active=True).order_by('price')
+    user_subscription = getattr(request.user, 'subscription', None)
     
-    item.is_completed = not item.is_completed
-    if item.is_completed:
-        item.completed_at = timezone.now()
-    else:
-        item.completed_at = None
-    item.save()
+    context = {
+        'plans': plans,
+        'user_subscription': user_subscription,
+    }
+    return render(request, 'wbs/subscription_plans.html', context)
+
+@login_required
+def subscription_detail(request, plan_id):
+    """구독 플랜 상세"""
+    plan = get_object_or_404(SubscriptionPlan, pk=plan_id, is_active=True)
+    user_subscription = getattr(request.user, 'subscription', None)
     
-    return redirect('wbs:daily_progress_update', 
-                   project_pk=item.daily_progress.project.pk,
-                   date_str=item.daily_progress.date.strftime('%Y-%m-%d'))
+    context = {
+        'plan': plan,
+        'user_subscription': user_subscription,
+    }
+    return render(request, 'wbs/subscription_detail.html', context)
+
+@login_required
+def subscribe(request, plan_id):
+    """구독 신청"""
+    plan = get_object_or_404(SubscriptionPlan, pk=plan_id, is_active=True)
+    
+    if request.method == 'POST':
+        # 결제 처리 (실제로는 결제 API 연동 필요)
+        payment_method = request.POST.get('payment_method', 'card')
+        
+        # 기존 구독이 있으면 업데이트, 없으면 생성
+        user_subscription, created = UserSubscription.objects.get_or_create(
+            user=request.user,
+            defaults={
+                'plan': plan,
+                'status': 'active',
+                'payment_method': payment_method,
+                'end_date': timezone.now() + timedelta(days=30 if plan.billing_cycle == 'monthly' else 365),
+            }
+        )
+        
+        if not created:
+            user_subscription.plan = plan
+            user_subscription.status = 'active'
+            user_subscription.payment_method = payment_method
+            user_subscription.end_date = timezone.now() + timedelta(days=30 if plan.billing_cycle == 'monthly' else 365)
+            user_subscription.save()
+        
+        messages.success(request, f'{plan.display_name} 플랜으로 구독되었습니다!')
+        return redirect('wbs:subscription_plans')
+    
+    context = {
+        'plan': plan,
+    }
+    return render(request, 'wbs/subscribe.html', context)
+
+@login_required
+def my_subscription(request):
+    """내 구독 정보"""
+    user_subscription = getattr(request.user, 'subscription', None)
+    
+    if not user_subscription:
+        messages.info(request, '구독 정보가 없습니다. 플랜을 선택해주세요.')
+        return redirect('wbs:subscription_plans')
+    
+    context = {
+        'user_subscription': user_subscription,
+    }
+    return render(request, 'wbs/my_subscription.html', context)
+
+@login_required
+def cancel_subscription(request):
+    """구독 취소"""
+    user_subscription = getattr(request.user, 'subscription', None)
+    
+    if not user_subscription:
+        messages.error(request, '구독 정보가 없습니다.')
+        return redirect('wbs:subscription_plans')
+    
+    if request.method == 'POST':
+        user_subscription.status = 'cancelled'
+        user_subscription.auto_renew = False
+        user_subscription.save()
+        
+        messages.success(request, '구독이 취소되었습니다.')
+        return redirect('wbs:my_subscription')
+    
+    context = {
+        'user_subscription': user_subscription,
+    }
+    return render(request, 'wbs/cancel_subscription.html', context)
+
+# 광고 관련 뷰들
+def get_ads_for_user(request, position='sidebar'):
+    """사용자에게 표시할 광고 조회"""
+    user_subscription = getattr(request.user, 'subscription', None) if request.user.is_authenticated else None
+    
+    # 무료 플랜 사용자에게만 광고 표시
+    if user_subscription and user_subscription.plan.name != 'free':
+        return []
+    
+    # 현재 페이지 경로
+    current_path = request.path
+    
+    # 실행 중인 광고 캠페인 조회
+    ads = AdCampaign.objects.filter(
+        position=position,
+        status='active',
+        is_active=True,
+        start_date__lte=timezone.now(),
+        end_date__gte=timezone.now(),
+        current_impressions__lt=F('max_impressions')
+    ).order_by('?')[:3]  # 랜덤으로 최대 3개
+    
+    # 노출 기록
+    for ad in ads:
+        ad.record_impression()
+    
+    return ads
+
+@login_required
+def ad_click(request, ad_id):
+    """광고 클릭 처리"""
+    ad = get_object_or_404(AdCampaign, pk=ad_id)
+    ad.record_click()
+    
+    return redirect(ad.target_url)
+
+@login_required
+def search(request):
+    """통합 검색 기능"""
+    query = request.GET.get('q', '').strip()
+    results = {}
+    
+    if query:
+        # 프로젝트 검색
+        projects = Project.objects.filter(
+            Q(title__icontains=query) | 
+            Q(description__icontains=query)
+        ).select_related('manager')[:10]
+        
+        # 사용자 검색 (관리자만)
+        users = []
+        if request.user.is_staff:
+            users = User.objects.filter(
+                Q(username__icontains=query) |
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query) |
+                Q(email__icontains=query)
+            )[:10]
+        
+        # 알림 검색
+        notifications = Notification.objects.filter(
+            user=request.user,
+            message__icontains=query
+        ).order_by('-created_at')[:10]
+        
+        results = {
+            'projects': projects,
+            'users': users,
+            'notifications': notifications,
+            'query': query,
+            'total_count': len(projects) + len(users) + len(notifications)
+        }
+    
+    return render(request, 'wbs/search_results.html', results)

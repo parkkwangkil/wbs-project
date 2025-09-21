@@ -1,249 +1,227 @@
 {% extends 'base.html' %}
 
-{% block title %}WBS Project Management - 홈{% endblock %}
+{% block title %}대시보드 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}대시보드{% endblock %}
 
 {% block content %}
-<!-- 페이지 헤더 -->
-<div class="page-header">
-    <div class="container">
-        <h1 class="page-title">
-            <i class="fas fa-project-diagram"></i> WBS Project Management
-        </h1>
-        <p class="page-subtitle">체계적인 프로젝트 관리와 승인 시스템</p>
-    </div>
-</div>
-
-<div class="container mt-4">
-    <!-- 통계 대시보드 -->
-    <div class="row mb-5">
-        <div class="col-md-3">
-            <div class="card gradient-1">
-                <div class="card-header text-center">
-                    <h2 class="text-white mb-0">{{ total_projects }}</h2>
-                    <p class="text-white mb-0">총 프로젝트</p>
+    <!-- Stats Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <div class="card">
+            <div class="card-body" style="text-align: center;">
+                <div style="width: 60px; height: 60px; background: #EEF2FF; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                    <i class="fas fa-project-diagram" style="color: #4F46E5; font-size: 1.5rem;"></i>
                 </div>
+                <h3 style="color: var(--text-heading); font-size: 2rem; font-weight: 700; margin: 0 0 0.5rem 0;">{{ total_projects }}</h3>
+                <p style="color: var(--text-secondary); margin: 0;">전체 프로젝트</p>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card gradient-2">
-                <div class="card-header text-center">
-                    <h2 class="text-white mb-0">{{ active_projects }}</h2>
-                    <p class="text-white mb-0">진행중인 프로젝트</p>
+        <div class="card">
+            <div class="card-body" style="text-align: center;">
+                <div style="width: 60px; height: 60px; background: #FEF3C7; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                    <i class="fas fa-clock" style="color: #F59E0B; font-size: 1.5rem;"></i>
                 </div>
+                <h3 style="color: var(--text-heading); font-size: 2rem; font-weight: 700; margin: 0 0 0.5rem 0;">{{ active_projects }}</h3>
+                <p style="color: var(--text-secondary); margin: 0;">진행중 프로젝트</p>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card gradient-3">
-                <div class="card-header text-center">
-                    <h2 class="text-white mb-0">{{ completed_projects }}</h2>
-                    <p class="text-white mb-0">완료된 프로젝트</p>
+        <div class="card">
+            <div class="card-body" style="text-align: center;">
+                <div style="width: 60px; height: 60px; background: #D1FAE5; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                    <i class="fas fa-check-circle" style="color: #10B981; font-size: 1.5rem;"></i>
                 </div>
+                <h3 style="color: var(--text-heading); font-size: 2rem; font-weight: 700; margin: 0 0 0.5rem 0;">{{ completed_projects }}</h3>
+                <p style="color: var(--text-secondary); margin: 0;">완료된 프로젝트</p>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card gradient-4">
-                <div class="card-header text-center">
-                    <h2 class="text-white mb-0">{{ pending_approvals|length }}</h2>
-                    <p class="text-white mb-0">승인 대기</p>
+        <div class="card">
+            <div class="card-body" style="text-align: center;">
+                <div style="width: 60px; height: 60px; background: #DBEAFE; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                    <i class="fas fa-comments" style="color: #3B82F6; font-size: 1.5rem;"></i>
                 </div>
+                <h3 style="color: var(--text-heading); font-size: 2rem; font-weight: 700; margin: 0 0 0.5rem 0;">{{ total_comments }}</h3>
+                <p style="color: var(--text-secondary); margin: 0;">댓글 수</p>
             </div>
         </div>
     </div>
 
-    <!-- 최근 프로젝트들 -->
-    <section class="mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>
-                <i class="fas fa-clock"></i> 최근 프로젝트
-            </h2>
-            <a href="{% url 'wbs:project_list' %}" class="btn btn-outline">
-                <i class="fas fa-list"></i> 전체 보기
-            </a>
-        </div>
-
-        {% if recent_projects %}
-            <div class="project-grid">
-                {% for project in recent_projects %}
-                    <div class="project-card card">
-                        <div class="project-header card-header {{ project.color_theme }}">
-                            <h3 class="card-title text-white">{{ project.title }}</h3>
-                            <div class="project-meta text-white">
-                                <span><i class="fas fa-user"></i> {{ project.manager.username }}</span>
-                                <span class="project-status status-{{ project.status }}">
-                                    {{ project.get_status_display }}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="project-body card-body">
-                            <p class="card-text">{{ project.description|truncatewords:20 }}</p>
-                            
-                            <div class="project-meta">
-                                <span><i class="fas fa-calendar"></i> {{ project.start_date }} ~ {{ project.end_date }}</span>
-                                <span><i class="fas fa-flag"></i> {{ project.get_priority_display }}</span>
-                            </div>
-                            
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: {{ project.progress }}%"></div>
-                            </div>
-                            <small class="text-muted">진행률: {{ project.progress }}%</small>
-                            
-                            <div class="mt-3">
-                                <a href="{% url 'wbs:project_detail' project.pk %}" class="btn btn-primary">
-                                    <i class="fas fa-eye"></i> 상세보기
-                                </a>
-                                <a href="{% url 'wbs:progress_calendar' project.pk %}" class="btn btn-outline-primary">
-                                    <i class="fas fa-calendar-check"></i> 진행체크
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="text-center p-5">
-                <i class="fas fa-project-diagram fa-3x text-muted mb-3"></i>
-                <h3 class="text-muted">아직 프로젝트가 없습니다</h3>
-                <p class="text-muted">첫 번째 프로젝트를 생성해보세요!</p>
-                <a href="{% url 'wbs:project_create' %}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> 새 프로젝트 생성
+    <!-- Main Content Grid -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+        <!-- Recent Projects -->
+        <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 class="card-title">
+                    <i class="fas fa-clock" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                    최근 프로젝트
+                </h2>
+                <a href="{% url 'wbs:project_list' %}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-list"></i>
+                    전체보기
                 </a>
             </div>
-        {% endif %}
-    </section>
+            <div class="card-body">
+                {% if recent_projects %}
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        {% for project in recent_projects %}
+                            <div class="card" style="padding: 1rem; border: 1px solid var(--card-border);">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                                    <h3 style="color: var(--text-heading); font-weight: 600; font-size: 1rem;">{{ project.title }}</h3>
+                                    <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500; background: #DBEAFE; color: #1D4ED8;">{{ project.get_status_display }}</span>
+                                </div>
+                                
+                                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">{{ project.description|truncatewords:20 }}</p>
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <div style="width: 24px; height: 24px; background: var(--btn-primary-bg); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600;">
+                                            {{ project.manager.username|first|upper }}
+                                        </div>
+                                        <span style="color: var(--text-secondary); font-size: 0.75rem;">{{ project.manager.username }}</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                        <i class="fas fa-calendar" style="color: var(--text-secondary); font-size: 0.75rem;"></i>
+                                        <span style="color: var(--text-secondary); font-size: 0.75rem;">{{ project.start_date }} ~ {{ project.end_date }}</span>
+                                    </div>
+                                </div>
 
-    <!-- 승인 대기 섹션 -->
-    {% if pending_approvals %}
-        <section class="mb-5">
-            <h2 class="mb-4">
-                <i class="fas fa-clipboard-check"></i> 승인 대기 중
-            </h2>
-            
-            <div class="approval-section">
-                {% for approval in pending_approvals %}
-                    <div class="approval-line">
-                        <div class="approval-order">{{ approval.order }}</div>
-                        <div class="approval-info">
-                            <div class="approval-name">
-                                {% if approval.phase %}
-                                    {{ approval.project.title }} - {{ approval.phase.phase_name }}
-                                {% else %}
-                                    {{ approval.project.title }}
-                                {% endif %}
-                            </div>
-                            <div class="text-muted">승인자: {{ approval.approver.username }}</div>
-                        </div>
-                        <div class="approval-status approval-pending">대기중</div>
-                        <a href="{% url 'wbs:approve_request' approval.pk %}" class="btn btn-sm btn-primary">
-                            <i class="fas fa-check"></i> 승인하기
-                        </a>
-                    </div>
-                {% endfor %}
-            </div>
-        </section>
-    {% endif %}
+                                <div style="margin-bottom: 0.75rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                        <span style="color: var(--text-secondary); font-size: 0.75rem;">Progress</span>
+                                        <span style="color: var(--text-heading); font-size: 0.75rem; font-weight: 600;">{{ project.progress }}%</span>
+                                    </div>
+                                    <div style="width: 100%; height: 8px; background: #E5E7EB; border-radius: 4px; overflow: hidden;">
+                                        <div style="width: {{ project.progress }}%; height: 100%; background: var(--btn-primary-bg); transition: width 0.3s ease;"></div>
+                                    </div>
+                                </div>
 
-    <!-- 이번 달 일정 -->
-    <section class="mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>
-                <i class="fas fa-calendar-alt"></i> {{ current_month }} 일정
-            </h2>
-            <a href="{% url 'wbs:calendar' %}" class="btn btn-outline">
-                <i class="fas fa-calendar"></i> 전체 캘린더
-            </a>
-        </div>
-
-        {% if monthly_projects %}
-            <div class="row">
-                {% for project in monthly_projects %}
-                    <div class="col-md-6 mb-3">
-                        <div class="phase-item">
-                            <div class="phase-order {{ project.color_theme }}">
-                                <i class="fas fa-project-diagram"></i>
-                            </div>
-                            <div class="phase-content">
-                                <div class="phase-name">{{ project.title }}</div>
-                                <div class="phase-meta">
-                                    {{ project.start_date }} ~ {{ project.end_date }} | 
-                                    {{ project.get_status_display }}
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <a href="{% url 'wbs:project_detail' project.pk %}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                        보기
+                                    </a>
+                                    <a href="{% url 'wbs:progress_calendar' project.pk %}" class="btn btn-secondary btn-sm">
+                                        <i class="fas fa-calendar-check"></i>
+                                        진행상황
+                                    </a>
                                 </div>
                             </div>
-                        </div>
+                        {% endfor %}
                     </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="text-center p-4">
-                <i class="fas fa-calendar-times fa-2x text-muted mb-3"></i>
-                <p class="text-muted">이번 달에 진행되는 프로젝트가 없습니다.</p>
-            </div>
-        {% endif %}
-    </section>
-
-    <!-- 빠른 작업 -->
-    <section class="text-center">
-        <h2 class="mb-4">
-            <i class="fas fa-bolt"></i> 빠른 작업
-        </h2>
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <a href="{% url 'wbs:project_create' %}" class="btn btn-primary btn-lg w-100">
-                    <i class="fas fa-plus"></i><br>
-                    새 프로젝트 생성
-                </a>
-            </div>
-            <div class="col-md-4 mb-3">
-                <a href="{% url 'wbs:project_list' %}" class="btn btn-secondary btn-lg w-100">
-                    <i class="fas fa-list"></i><br>
-                    프로젝트 목록
-                </a>
-            </div>
-            <div class="col-md-4 mb-3">
-                <a href="{% url 'wbs:calendar' %}" class="btn btn-success btn-lg w-100">
-                    <i class="fas fa-calendar"></i><br>
-                    월별 캘린더
-                </a>
+                {% else %}
+                    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);">
+                        <i class="fas fa-project-diagram" style="font-size: 3rem; margin-bottom: 1rem; color: var(--text-disabled);"></i>
+                        <p style="font-size: 1.125rem; margin-bottom: 0.5rem;">아직 프로젝트가 없습니다</p>
+                        <p style="margin-bottom: 1.5rem;">첫 번째 프로젝트를 만들어보세요!</p>
+                        <a href="{% url 'wbs:project_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i>
+                            프로젝트 생성
+                        </a>
+                    </div>
+                {% endif %}
             </div>
         </div>
-    </section>
-</div>
 
-<style>
-.row {
-    display: flex;
-    flex-wrap: wrap;
-    margin: 0 -15px;
-}
+        <!-- Sidebar Content -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Pending Approvals -->
+            {% if pending_approvals %}
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="fas fa-clipboard-check" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                            Pending Approvals
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            {% for approval in pending_approvals %}
+                                <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; border: 1px solid var(--card-border); border-radius: 8px;">
+                                    <div style="width: 32px; height: 32px; background: #FEF3C7; color: #92400E; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem;">
+                                        {{ approval.order }}
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-weight: 500; color: var(--text-heading); font-size: 0.875rem;">
+                                            {% if approval.phase %}
+                                                {{ approval.project.title }} - {{ approval.phase.phase_name }}
+                                            {% else %}
+                                                {{ approval.project.title }}
+                                            {% endif %}
+                                        </div>
+                                        <div style="color: var(--text-secondary); font-size: 0.75rem;">
+                                            Approver: {{ approval.approver.username }}
+                                        </div>
+                                    </div>
+                                    <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500; background: #FEF3C7; color: #92400E;">Pending</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
 
-.col-md-3, .col-md-4, .col-md-6 {
-    padding: 0 15px;
-    margin-bottom: 30px;
-}
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-bolt" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        Quick Actions
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <a href="{% url 'wbs:project_create' %}" class="btn btn-primary" style="justify-content: flex-start; padding: 1rem;">
+                            <i class="fas fa-plus" style="margin-right: 0.75rem;"></i>
+                            <div style="text-align: left;">
+                                <div style="font-weight: 600;">Create Project</div>
+                                <div style="font-size: 0.75rem; opacity: 0.8;">Start a new project</div>
+                            </div>
+                        </a>
+                        <a href="{% url 'wbs:project_list' %}" class="btn btn-secondary" style="justify-content: flex-start; padding: 1rem;">
+                            <i class="fas fa-list" style="margin-right: 0.75rem;"></i>
+                            <div style="text-align: left;">
+                                <div style="font-weight: 600;">View Projects</div>
+                                <div style="font-size: 0.75rem; opacity: 0.8;">Browse all projects</div>
+                            </div>
+                        </a>
+                        <a href="{% url 'wbs:calendar' %}" class="btn btn-secondary" style="justify-content: flex-start; padding: 1rem;">
+                            <i class="fas fa-calendar" style="margin-right: 0.75rem;"></i>
+                            <div style="text-align: left;">
+                                <div style="font-weight: 600;">View Calendar</div>
+                                <div style="font-size: 0.75rem; opacity: 0.8;">Check project timeline</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
 
-.col-md-3 { flex: 0 0 25%; max-width: 25%; }
-.col-md-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
-.col-md-6 { flex: 0 0 50%; max-width: 50%; }
-
-@media (max-width: 768px) {
-    .col-md-3, .col-md-4, .col-md-6 {
-        flex: 0 0 100%;
-        max-width: 100%;
-    }
-}
-
-.mb-0 { margin-bottom: 0; }
-.mb-3 { margin-bottom: 1rem; }
-.mb-4 { margin-bottom: 1.5rem; }
-.mb-5 { margin-bottom: 3rem; }
-.mt-3 { margin-top: 1rem; }
-.mt-4 { margin-top: 1.5rem; }
-
-.w-100 { width: 100%; }
-.btn-lg { padding: 1rem 1.5rem; font-size: 1.125rem; }
-.btn-sm { padding: 0.375rem 0.75rem; font-size: 0.875rem; }
-
-.text-muted { color: #6c757d; }
-.fa-2x { font-size: 2em; }
-.fa-3x { font-size: 3em; }
-</style>
+            <!-- Monthly Schedule -->
+            {% if monthly_projects %}
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="fas fa-calendar-alt" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                            {{ current_month }} Schedule
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            {% for project in monthly_projects %}
+                                <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem;">
+                                    <div style="width: 32px; height: 32px; background: var(--btn-primary-bg); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-project-diagram"></i>
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-weight: 500; color: var(--text-heading); font-size: 0.875rem;">{{ project.title }}</div>
+                                        <div style="color: var(--text-secondary); font-size: 0.75rem;">
+                                            {{ project.start_date }} ~ {{ project.end_date }} | {{ project.get_status_display }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

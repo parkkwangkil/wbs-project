@@ -488,7 +488,7 @@
 
 <script>
 function openDayDetail(dateStr) {
-    window.location.href = `{% url 'wbs:daily_progress_update' project.pk 'DATE_PLACEHOLDER' %}`.replace('DATE_PLACEHOLDER', dateStr);
+    window.location.href = `{% url 'wbs:daily_progress_update_with_date' project.pk 'DATE_PLACEHOLDER' %}`.replace('DATE_PLACEHOLDER', dateStr);
 }
 
 function addProgress(dateStr) {

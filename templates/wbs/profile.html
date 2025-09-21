@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}프로필 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}내 프로필{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- 프로필 카드 -->
+    <div class="lg:col-span-1">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-user" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                    프로필 정보
+                </h2>
+            </div>
+            <div class="card-body" style="text-align: center;">
+                <!-- 프로필 이미지 -->
+                <div style="margin-bottom: 1.5rem;">
+                    {% if profile.avatar %}
+                        <img src="{{ profile.avatar.url }}" alt="프로필 이미지" 
+                             style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--card-border);">
+                    {% else %}
+                        <div class="avatar avatar-xl" style="background: var(--btn-primary-bg); color: white; margin: 0 auto;">
+                            {{ user.username|first|upper }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- 기본 정보 -->
+                <h3 style="font-size: 1.5rem; font-weight: 600; color: var(--text-heading); margin-bottom: 0.5rem;">
+                    {{ user.username }}
+                </h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">@{{ user.username }}</p>
+                
+                {% if profile.department %}
+                    <p style="color: var(--text-body); margin-bottom: 0.5rem;">
+                        <i class="fas fa-briefcase" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        {{ profile.department }}
+                    </p>
+                {% endif %}
+                
+                {% if profile.location %}
+                    <p style="color: var(--text-body); margin-bottom: 0.5rem;">
+                        <i class="fas fa-map-marker-alt" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        {{ profile.location }}
+                    </p>
+                {% endif %}
+                
+                {% if user.email %}
+                    <p style="color: var(--text-body); margin-bottom: 1.5rem;">
+                        <i class="fas fa-envelope" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        {{ user.email }}
+                    </p>
+                {% endif %}
+                
+                <!-- 편집 버튼 -->
+                <a href="{% url 'wbs:profile_edit' %}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i>
+                    프로필 편집
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 상세 정보 -->
+    <div class="lg:col-span-2">
+        <!-- 자기소개 -->
+        {% if profile.bio %}
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-quote-left" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                    자기소개
+                </h2>
+            </div>
+            <div class="card-body">
+                <p style="color: var(--text-body); line-height: 1.6;">{{ profile.bio|linebreaks }}</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- 활동 통계 -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-chart-bar" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                    활동 통계
+                </h2>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                    <div style="text-align: center; padding: 1rem; background: var(--status-progress-bg); border-radius: 8px;">
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--status-progress-text);">
+                            {{ user.managed_projects.count }}
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 0.875rem;">관리 프로젝트</div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 1rem; background: var(--status-completed-bg); border-radius: 8px;">
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--status-completed-text);">
+                            {{ user.comments.count }}
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 0.875rem;">작성 댓글</div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 1rem; background: #F3E8FF; border-radius: 8px;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #7C3AED;">
+                            {{ user.uploaded_documents.count }}
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 0.875rem;">업로드 문서</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
