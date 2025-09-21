@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}WBS Project Management{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- 네비게이션 -->
+    <nav class="navbar">
+        <div class="nav-container container">
+            <a href="{% url 'wbs:home' %}" class="nav-brand">
+                <i class="fas fa-project-diagram"></i> WBS Project
+            </a>
+            <ul class="nav-menu">
+                <li><a href="{% url 'wbs:home' %}" class="nav-link">홈</a></li>
+                <li><a href="{% url 'wbs:project_list' %}" class="nav-link">프로젝트</a></li>
+                <li><a href="{% url 'wbs:project_create' %}" class="nav-link">새 프로젝트</a></li>
+                <li><a href="{% url 'wbs:calendar' %}" class="nav-link">캘린더</a></li>
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'admin:index' %}" class="nav-link">관리자</a></li>
+                    <li><a href="{% url 'admin:logout' %}" class="nav-link">로그아웃</a></li>
+                {% else %}
+                    <li><a href="{% url 'admin:login' %}" class="nav-link">로그인</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 메인 컨텐츠 -->
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- 푸터 -->
+    <footer style="background: #343a40; color: white; text-align: center; padding: 2rem 0; margin-top: 4rem;">
+        <div class="container">
+            <p>&copy; 2024 WBS Project Management System. Django로 구축된 프로젝트 관리 시스템입니다.</p>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>
