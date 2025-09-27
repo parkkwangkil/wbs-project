@@ -299,7 +299,7 @@
     </div>
 </div>
 
-<!-- 고급 일정 추가 모달 (Figma-like) -->
+<!-- 고급 일정 추가 모달 (Figma-like) 복구 -->
 <div id="advancedEventModal" class="ds-overlay">
     <div class="ds-modal">
         <div class="ds-modal-header">
@@ -312,7 +312,6 @@
             <input type="hidden" id="selectedStartDate" name="start_date">
             <input type="hidden" id="selectedEndDate" name="end_date">
             
-            <!-- 기본 정보 -->
             <div style="margin-bottom: 1.5rem;">
                 <h4 class="ds-modal-title" style="font-size:16px;"><i class="fas fa-info-circle"></i> 기본 정보</h4>
                 <div style="display: grid; gap: 12px;">
@@ -327,7 +326,6 @@
                 </div>
             </div>
             
-            <!-- 날짜 범위 선택 -->
             <div style="margin-bottom: 1.5rem;">
                 <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fas fa-calendar-alt"></i>
@@ -346,13 +344,11 @@
                 </div>
                 <button type="button" onclick="updateModalDateRange()" class="btn-secondary"><i class="fas fa-sync"></i> 업데이트</button>
                 
-                <!-- 선택된 날짜 범위 표시 -->
                 <div id="modalSelectedRange" style="background: var(--sidebar-hover); padding: 1rem; border-radius: 8px; display: none;">
                     <div id="modalRangeInfo" style="color: var(--text-body);"></div>
                 </div>
             </div>
             
-            <!-- 일정 설정 -->
             <div style="margin-bottom: 1.5rem;">
                 <h4 class="ds-modal-title" style="font-size:16px;"><i class="fas fa-cog"></i> 일정 설정</h4>
                 <div class="ds-grid-2" style="margin-bottom: 12px;">
@@ -380,43 +376,29 @@
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                     <div>
-                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
-                            시작 시간
-                        </label>
-                        <input type="time" name="start_time" id="advancedStartTime" 
-                               style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
+                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">시작 시간</label>
+                        <input type="time" name="start_time" id="advancedStartTime" style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
                     </div>
-                    
                     <div>
-                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
-                            종료 시간
-                        </label>
-                        <input type="time" name="end_time" id="advancedEndTime" 
-                               style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
+                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">종료 시간</label>
+                        <input type="time" name="end_time" id="advancedEndTime" style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
                     </div>
                 </div>
                 
                 <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--sidebar-hover); border-radius: 8px; margin-bottom: 1rem;">
                     <input type="checkbox" name="is_all_day" id="advancedIsAllDay" style="transform: scale(1.2);">
-                    <label for="advancedIsAllDay" style="color: var(--text-heading); font-weight: 500; cursor: pointer;">
-                        하루 종일
-                    </label>
+                    <label for="advancedIsAllDay" style="color: var(--text-heading); font-weight: 500; cursor: pointer;">하루 종일</label>
                 </div>
             </div>
             
-            <!-- 관련 프로젝트 -->
             <div style="margin-bottom: 1.5rem;">
                 <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fas fa-project-diagram"></i>
                     관련 프로젝트
                 </h4>
-                
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
-                        프로젝트 선택
-                    </label>
-                    <select name="related_project" id="advancedRelatedProject" 
-                            style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">프로젝트 선택</label>
+                    <select name="related_project" id="advancedRelatedProject" style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
                         <option value="">프로젝트를 선택하세요</option>
                         {% for project in user_projects %}
                             <option value="{{ project.pk }}">{{ project.title }}</option>
@@ -425,84 +407,15 @@
                 </div>
             </div>
             
-                   <!-- 위치 및 링크 -->
-                   <div style="margin-bottom: 1.5rem;">
-                       <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                           <i class="fas fa-map-marker-alt"></i>
-                           위치 및 링크
-                       </h4>
-                       
-                       <div style="display: grid; gap: 1rem;">
-                           <div>
-                               <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
-                                   장소
-                               </label>
-                               <input type="text" name="location" id="advancedLocation" 
-                                      style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);"
-                                      placeholder="장소를 입력하세요">
-                           </div>
-                           
-                           <div>
-                               <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
-                                   회의 링크
-                               </label>
-                               <input type="url" name="meeting_link" id="advancedMeetingLink" 
-                                      style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);"
-                                      placeholder="회의 링크를 입력하세요">
-                           </div>
-                           
-                           <div>
-                               <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
-                                   알림 시간 (분)
-                               </label>
-                               <input type="number" name="reminder_minutes" id="advancedReminderMinutes" 
-                                      value="15" min="0" max="1440"
-                                      style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);"
-                                      placeholder="알림 시간을 입력하세요">
-                           </div>
-                       </div>
-                   </div>
-                   
-                   <!-- 추가 설정 -->
-                   <div style="margin-bottom: 1.5rem;">
-                       <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                           <i class="fas fa-cog"></i>
-                           추가 설정
-                       </h4>
-                       
-                       <div style="display: flex; flex-direction: column; gap: 1rem;">
-                           <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--sidebar-hover); border-radius: 8px;">
-                               <input type="checkbox" name="is_recurring" id="advancedIsRecurring" style="transform: scale(1.2);">
-                               <label for="advancedIsRecurring" style="color: var(--text-heading); font-weight: 500; cursor: pointer;">
-                                   반복 일정
-                               </label>
-                           </div>
-                           
-                           <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--sidebar-hover); border-radius: 8px;">
-                               <input type="checkbox" name="is_private" id="advancedIsPrivate" style="transform: scale(1.2);">
-                               <label for="advancedIsPrivate" style="color: var(--text-heading); font-weight: 500; cursor: pointer;">
-                                   비공개 일정
-                               </label>
-                           </div>
-                       </div>
-                   </div>
-            
-            <!-- 제출 버튼 -->
             <div style="display: flex; gap: 1rem; justify-content: flex-end; border-top: 1px solid var(--card-border); padding-top: 1.5rem;">
-                <button type="button" onclick="closeAdvancedEventModal()" class="btn btn-secondary">
-                    <i class="fas fa-times"></i>
-                    취소
-                </button>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i>
-                    일정 생성
-                </button>
+                <button type="button" onclick="closeAdvancedEventModal()" class="btn btn-secondary"><i class="fas fa-times"></i>취소</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i>일정 생성</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- 빠른 일정 추가 모달 (기존 기능) -->
+<!-- 빠른 일정 추가 모달 복구 -->
 <div id="quickEventModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); min-width: 400px;">
         <h3 style="margin: 0 0 1rem 0; color: var(--text-heading);">빠른 일정 추가</h3>
@@ -511,42 +424,21 @@
             <input type="hidden" id="selectedDate" name="start_date">
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading);">제목</label>
-                <input type="text" name="title" id="eventTitle" required 
-                       style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;"
-                       placeholder="일정 제목을 입력하세요">
-            </div>
-            <div style="margin-bottom: 1rem;">
-                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading);">유형</label>
-                <select name="event_type" id="eventType" 
-                        style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                    <option value="personal">개인 일정</option>
-                    <option value="meeting">회의</option>
-                    <option value="deadline">마감일</option>
-                    <option value="reminder">알림</option>
-                    <option value="holiday">휴일</option>
-                    <option value="other">기타</option>
-                </select>
+                <input type="text" name="title" id="eventTitle" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;" placeholder="일정 제목을 입력하세요">
             </div>
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                <button type="button" onclick="closeQuickEventModal()" 
-                        style="padding: 0.5rem 1rem; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    취소
-                </button>
-                <button type="submit" 
-                        style="padding: 0.5rem 1rem; background: var(--btn-primary-bg); color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    추가
-                </button>
+                <button type="button" onclick="closeQuickEventModal()" style="padding: 0.5rem 1rem; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">취소</button>
+                <button type="submit" style="padding: 0.5rem 1rem; background: var(--btn-primary-bg); color: white; border: none; border-radius: 4px; cursor: pointer;">추가</button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-// 빠른 일정 추가 (기존 기능)
+// 빠른 일정 추가
 function quickAddEvent(dateStr) {
     document.getElementById('selectedDate').value = dateStr;
     document.getElementById('eventTitle').value = '';
-    document.getElementById('eventType').value = 'personal';
     document.getElementById('quickEventModal').style.display = 'block';
 }
 
@@ -554,21 +446,12 @@ function closeQuickEventModal() {
     document.getElementById('quickEventModal').style.display = 'none';
 }
 
-// 고급 일정 추가 (새로운 기능)
+// 고급 일정 추가
 function advancedAddEvent(dateStr) {
-    // 시작일을 선택된 날짜로 설정
-    document.getElementById('modalStartDate').value = dateStr;
-    document.getElementById('modalEndDate').value = dateStr;
-    
-    // 폼 초기화
     document.getElementById('advancedEventForm').reset();
     document.getElementById('modalStartDate').value = dateStr;
     document.getElementById('modalEndDate').value = dateStr;
-    
-    // 모달 표시
     document.getElementById('advancedEventModal').style.display = 'block';
-    
-    // 날짜 범위 업데이트
     updateModalDateRange();
 }
 
@@ -576,158 +459,52 @@ function closeAdvancedEventModal() {
     document.getElementById('advancedEventModal').style.display = 'none';
 }
 
-// 모달 내 날짜 범위 업데이트
 function updateModalDateRange() {
     const startDate = document.getElementById('modalStartDate').value;
     const endDate = document.getElementById('modalEndDate').value;
-    
-    if (startDate && endDate) {
+    if (startDate && endDate && startDate <= endDate) {
         const start = new Date(startDate);
         const end = new Date(endDate);
-        
-        if (start <= end) {
-            // 선택된 범위 표시
-            const rangeInfo = document.getElementById('modalRangeInfo');
-            const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-            
-            rangeInfo.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-                    <i class="fas fa-calendar-alt" style="color: var(--btn-primary-bg);"></i>
-                    <span><strong>${formatModalDate(start)}</strong> ~ <strong>${formatModalDate(end)}</strong></span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <i class="fas fa-clock" style="color: var(--text-secondary);"></i>
-                    <span>총 <strong>${daysDiff}일</strong>간의 일정</span>
-                </div>
-            `;
-            
-            document.getElementById('modalSelectedRange').style.display = 'block';
-            
-            // 폼에 날짜 설정
-            document.getElementById('selectedStartDate').value = startDate;
-            document.getElementById('selectedEndDate').value = endDate;
-        } else {
-            alert('종료일은 시작일보다 늦어야 합니다.');
-        }
+        const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+        document.getElementById('modalSelectedRange').style.display = 'block';
+        document.getElementById('modalRangeInfo').textContent = `${startDate} ~ ${endDate} (총 ${daysDiff}일)`;
+        document.getElementById('selectedStartDate').value = startDate;
+        document.getElementById('selectedEndDate').value = endDate;
     }
 }
 
-function formatModalDate(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-    const weekday = weekdays[date.getDay()];
-    
-    return `${year}년 ${month}월 ${day}일 (${weekday})`;
-}
-
-// 빠른 일정 추가 폼 제출 처리
+// 빠른 일정 생성 요청
 document.getElementById('quickEventForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    
     const formData = new FormData(this);
-    
     fetch('{% url "wbs:event_quick_create" %}', {
         method: 'POST',
         body: formData,
-        headers: {
-            'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value,
-            'X-Requested-With': 'XMLHttpRequest'
-        }
+        headers: { 'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value,
+                   'X-Requested-With': 'XMLHttpRequest' }
     })
-    .then(response => {
-        console.log('Quick Event Response status:', response.status);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Quick Event Response data:', data);
-        if (data.success) {
-            closeQuickEventModal();
-            location.reload(); // 페이지 새로고침으로 새 일정 표시
-        } else {
-            alert('일정 추가에 실패했습니다: ' + (data.error || '알 수 없는 오류'));
-        }
-    })
-    .catch(error => {
-        console.error('Quick Event Error:', error);
-        alert('일정 추가 중 오류가 발생했습니다: ' + error.message);
-    });
+    .then(r => r.json())
+    .then(data => { if (data.success) { closeQuickEventModal(); location.reload(); } else { alert('실패: ' + (data.error || '')); }})
+    .catch(err => alert('오류: ' + err.message));
 });
 
-// 모달 외부 클릭 시 닫기
-document.getElementById('quickEventModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeQuickEventModal();
-    }
-});
-
-// 고급 일정 생성 폼 제출 처리
+// 고급 일정 생성 요청
 document.getElementById('advancedEventForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    
     const formData = new FormData(this);
-    
     fetch('{% url "wbs:event_create" %}', {
         method: 'POST',
         body: formData,
-        headers: {
-            'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value,
-            'X-Requested-With': 'XMLHttpRequest'
-        }
+        headers: { 'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value,
+                   'X-Requested-With': 'XMLHttpRequest' }
     })
-    .then(response => {
-        console.log('Advanced Event Response status:', response.status);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        if (response.redirected) {
-            window.location.href = response.url;
-            return;
-        }
-        return response.json();
+    .then(async r => {
+        if (r.redirected) { window.location.href = r.url; return; }
+        const data = await r.json();
+        if (data.success) { closeAdvancedEventModal(); location.reload(); }
+        else { alert('실패: ' + (data.error || '')); }
     })
-    .then(data => {
-        console.log('Advanced Event Response data:', data);
-        if (data && data.success) {
-            closeAdvancedEventModal();
-            location.reload(); // 페이지 새로고침으로 새 일정 표시
-        } else {
-            let errorMessage = '일정 생성에 실패했습니다: ' + (data.error || '알 수 없는 오류');
-            if (data.errors) {
-                errorMessage += '\n\n상세 오류:\n';
-                for (const [field, errors] of Object.entries(data.errors)) {
-                    errorMessage += `${field}: ${errors.join(', ')}\n`;
-                }
-            }
-            alert(errorMessage);
-        }
-    })
-    .catch(error => {
-        console.error('Advanced Event Error:', error);
-        alert('일정 생성 중 오류가 발생했습니다: ' + error.message);
-    });
-});
-
-// 고급 모달 외부 클릭 시 닫기
-document.getElementById('advancedEventModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeAdvancedEventModal();
-    }
-});
-
-// 하루 종일 체크박스 토글 (고급 모달)
-document.getElementById('advancedIsAllDay').addEventListener('change', function() {
-    const timeFields = document.querySelectorAll('#advancedStartTime, #advancedEndTime');
-    timeFields.forEach(field => {
-        field.disabled = this.checked;
-        if (this.checked) {
-            field.value = '';
-        }
-    });
+    .catch(err => alert('오류: ' + err.message));
 });
 </script>
 {% endblock %}

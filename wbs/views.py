@@ -82,6 +82,30 @@ def project_list(request):
     projects = Project.objects.all().order_by('-created_at')
     return render(request, 'wbs/project_list.html', {'projects': projects})
 
+@login_required
+def team_projects(request):
+    """내가 관리하거나 참여 중인 팀 프로젝트 목록"""
+    projects = Project.objects.filter(
+        Q(manager=request.user) | Q(team_members=request.user)
+    ).distinct().order_by('-updated_at', '-created_at')
+
+    # id 쿼리 파라미터가 오면 해당 프로젝트 상세로 이동 (권한 확인)
+    target_id = request.GET.get('id')
+    if target_id:
+        try:
+            target = projects.get(pk=target_id)
+            return redirect('wbs:project_detail', pk=target.pk)
+        except Project.DoesNotExist:
+            pass
+
+    # 프로젝트가 하나 이상이면 가장 최근 프로젝트 상세로 바로 이동
+    first_project = projects.first()
+    if first_project:
+        return redirect('wbs:project_detail', pk=first_project.pk)
+
+    # 없으면 안내 리스트 페이지 표시
+    return render(request, 'wbs/team_projects.html', {'projects': projects})
+
 def project_detail(request, pk):
     """프로젝트 상세"""
     project = get_object_or_404(Project, pk=pk)
@@ -101,12 +125,34 @@ def project_detail(request, pk):
     else:
         form = CommentForm()
     
+    # 타임라인 바 위치(좌표) 사전 계산
+    px_per_day = 40
+    phase_rows = []
+    for ph in phases:
+        start = max(ph.start_date, project.start_date)
+        end = max(start, min(ph.end_date, project.end_date))
+        left = (start - project.start_date).days * px_per_day
+        width = ((end - start).days + 1) * px_per_day
+        phase_rows.append({
+            'id': ph.id,
+            'title': ph.title,
+            'description': getattr(ph, 'description', ''),
+            'start_date': ph.start_date,
+            'end_date': ph.end_date,
+            'owner': project.manager.username,
+            'part': getattr(project, 'priority', ''),
+            'left': left,
+            'width': width,
+        })
+
     context = {
         'project': project,
         'phases': phases,
+        'phase_rows': phase_rows,
         'comments': comments,
         'documents': documents,
         'form': form,
+        'px_per_day': px_per_day,
     }
     
     return render(request, 'wbs/project_detail.html', context)
@@ -157,6 +203,27 @@ def project_edit(request, pk):
     
     return render(request, 'wbs/project_form.html', {'form': form})
 
+@login_required
+def project_delete(request, pk):
+    """프로젝트 삭제 확인 및 처리"""
+    project = get_object_or_404(Project, pk=pk)
+    if request.method == 'POST' or request.GET.get('confirm') == '1':
+        title = project.title
+        project.delete()
+        messages.success(request, f'프로젝트 "{title}" 가 삭제되었습니다.')
+        # AJAX 요청 대응
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'redirect_url': str(request.build_absolute_uri(reverse('wbs:project_list')))})
+        next_url = request.POST.get('next') or request.GET.get('next')
+        if next_url:
+            return redirect(next_url)
+        # 기본: 간단한 완료 페이지로 안내 후 메인으로 이동
+        return render(request, 'wbs/deleted_success.html', {
+            'message': '프로젝트가 삭제되었습니다. 메인 페이지로 이동합니다.',
+            'redirect_url': reverse('wbs:home')
+        })
+    return render(request, 'wbs/project_confirm_delete.html', { 'project': project })
+
 def phase_create(request, project_pk):
     """프로젝트 단계 생성"""
     project = get_object_or_404(Project, pk=project_pk)
@@ -195,244 +262,70 @@ def phase_edit(request, project_pk, phase_pk):
     return render(request, 'wbs/phase_form.html', {'form': form, 'project': project})
 
 def calendar(request):
-    """캘린더 뷰 (프로젝트 + 일정 통합)"""
+    """캘린더 뷰 - 달력 셀과 일자별 프로젝트/이벤트를 렌더링하기 위한 컨텍스트 복구"""
     import calendar as cal_module
-    from datetime import datetime, date
-    
-    today = timezone.now()
-    year = int(request.GET.get('year', today.year))
-    month = int(request.GET.get('month', today.month))
-    # 간결 모드: 토글 제거, 항상 프로젝트/일정 표시, 주간바 숨김
-    show_projects = True
-    show_events = True
-    show_bars = False
-    exclude_keyword = ''
-    
-    # 월별 프로젝트들 (시작일 또는 종료일이 해당 월에 포함되는 프로젝트들)
+    from datetime import date as date_cls
+
+    today_dt = timezone.localdate()
+    year = int(request.GET.get('year', today_dt.year))
+    month = int(request.GET.get('month', today_dt.month))
+
+    first_day = date_cls(year, month, 1)
+    last_day = date_cls(year, month, cal_module.monthrange(year, month)[1])
+
+    # 월 범위에 걸치는 프로젝트/이벤트 조회
     projects = Project.objects.filter(
-        Q(start_date__year=year, start_date__month=month) |
-        Q(end_date__year=year, end_date__month=month) |
-        Q(start_date__lte=date(year, month, 1), end_date__gte=date(year, month, cal_module.monthrange(year, month)[1]))
+        Q(start_date__lte=last_day) & Q(end_date__gte=first_day)
     ).order_by('start_date')
-    if exclude_keyword:
-        projects = projects.exclude(title__icontains=exclude_keyword)
-    
-    # 사용자가 참여한 모든 프로젝트 (일정 생성 시 선택용)
-    user_projects = Project.objects.filter(
-        Q(manager=request.user) | Q(team_members=request.user)
-    ).distinct().order_by('title')
-    
-    # 월별 일정들 (사용자가 생성했거나 참석하는 일정)
+
     events = Event.objects.filter(
-        Q(creator=request.user) | Q(attendees=request.user)
-    ).filter(
-        Q(start_date__year=year, start_date__month=month) |
-        Q(end_date__year=year, end_date__month=month) |
-        Q(start_date__lte=date(year, month, 1), end_date__gte=date(year, month, cal_module.monthrange(year, month)[1]))
-    ).distinct().order_by('start_date', 'start_time')
-    if exclude_keyword:
-        events = events.exclude(title__icontains=exclude_keyword)
-    
-    # 해당 월의 일별 프로젝트 매핑
-    daily_projects = {}
-    for project in projects:
-        # 프로젝트가 해당 월에 걸쳐있는 모든 날짜
-        start_date = max(project.start_date, date(year, month, 1))
-        end_date = min(project.end_date, date(year, month, cal_module.monthrange(year, month)[1]))
-        
-        current_date = start_date
-        while current_date <= end_date:
-            if current_date not in daily_projects:
-                daily_projects[current_date] = []
-            daily_projects[current_date].append(project)
-            current_date += timedelta(days=1)
-    
-    # 해당 월의 일별 일정 매핑
-    daily_events = {}
-    for event in events:
-        # 일정이 해당 월에 걸쳐있는 모든 날짜
-        start_date = max(event.start_date, date(year, month, 1))
-        end_date = min(event.end_date, date(year, month, cal_module.monthrange(year, month)[1]))
-        
-        current_date = start_date
-        while current_date <= end_date:
-            if current_date not in daily_events:
-                daily_events[current_date] = []
-            daily_events[current_date].append(event)
-            current_date += timedelta(days=1)
-    
-    # 템플릿에서 사용할 수 있도록 날짜별 리스트 생성
-    daily_projects_list = []
-    for project in projects:
-        daily_projects_list.append(project)
-    
-    daily_events_list = []
-    for event in events:
-        daily_events_list.append(event)
-    
-    # 캘린더 데이터 생성
-    cal = cal_module.monthcalendar(year, month)
+        Q(start_date__lte=last_day) & Q(end_date__gte=first_day)
+    ).order_by('start_date')
+
+    # 사용자 프로젝트 (고급 추가 모달용)
+    user_projects = Project.objects.all()
+    if request.user.is_authenticated:
+        user_projects = Project.objects.filter(Q(manager=request.user) | Q(team_members=request.user)).distinct()
+
+    # 주 단위 달력 데이터 구성 (해당 월 외 날짜는 None 처리)
+    weeks = []
+    for week_dates in cal_module.Calendar().monthdatescalendar(year, month):
+        week = []
+        for d in week_dates:
+            if d.month != month:
+                week.append(None)
+            else:
+                day_projects = [p for p in projects if p.start_date <= d <= p.end_date]
+                day_events = [e for e in events if e.start_date <= d <= e.end_date]
+                week.append({
+                    'date': d,
+                    'day': d.day,
+                    'is_today': (d == today_dt),
+                    'projects': day_projects,
+                    'events': day_events,
+                })
+        weeks.append(week)
+
     month_name = cal_module.month_name[month]
 
-    calendar_weeks = []
-    today_date = today.date()
-    for week in cal:
-        week_data = []
-        for day in week:
-            if day == 0:
-                week_data.append(None)
-            else:
-                current_date = date(year, month, day)
-                week_data.append({
-                    'day': day,
-                    'date': current_date,
-                    'is_today': current_date == today_date,
-                    'projects': daily_projects.get(current_date, []),
-                    'events': daily_events.get(current_date, []),
-                })
-        calendar_weeks.append(week_data)
-
-    # 주간 바(멀티데이 바) 계산 유틸
-    def build_week_bars(week_days, items, get_start, get_end, get_color, get_url, get_label):
-        # week_days: [date or None] length 7
-        # items: iterable of objects
-        # returns lanes -> each lane is list of segments [{type:'empty', colspan:int} | {type:'span', colspan:int, label, url, color}]
-        # 주의: week_days 내 None은 주의 시작/끝 바깥 날짜
-        # week_days 요소는 {'day': int, 'date': date, ...} 또는 None
-        valid_days = [d['date'] for d in week_days if d is not None]
-        if not valid_days:
-            return []
-        week_start = valid_days[0]
-        week_end = valid_days[-1]
-
-        # 스팬 수집
-        spans = []
-        for it in items:
-            start = get_start(it)
-            end = get_end(it)
-            # 교집합 확인
-            if start > week_end or end < week_start:
-                continue
-            # 주 내 시작/끝 컬럼 계산
-            span_start_date = max(start, week_start)
-            span_end_date = min(end, week_end)
-            # 컬럼 인덱스 (0..6) 계산 (None 칸은 건너뛰기)
-            start_col = None
-            end_col = None
-            for idx, d in enumerate(week_days):
-                if d is None:
-                    continue
-                current = d['date']
-                if start_col is None and current >= span_start_date:
-                    start_col = idx
-                if current <= span_end_date:
-                    end_col = idx
-            if start_col is None or end_col is None:
-                continue
-            colspan = (end_col - start_col + 1)
-            spans.append({
-                'start_col': start_col,
-                'end_col': end_col,
-                'colspan': colspan,
-                'label': get_label(it),
-                'url': get_url(it),
-                'color': get_color(it),
-            })
-
-        # 그리디 레인 배치
-        lanes = []  # each lane: list of spans with start_col/end_col
-        for sp in sorted(spans, key=lambda x: (x['start_col'], -x['colspan'])):
-            placed = False
-            for lane in lanes:
-                # overlap 확인
-                if any(not (sp['end_col'] < lp['start_col'] or sp['start_col'] > lp['end_col']) for lp in lane):
-                    continue
-                lane.append(sp)
-                placed = True
-                break
-            if not placed:
-                lanes.append([sp])
-
-        # 레인을 세그먼트로 변환
-        lane_segments = []
-        for lane in lanes:
-            segments = []
-            cursor = 0
-            for sp in sorted(lane, key=lambda x: x['start_col']):
-                if sp['start_col'] > cursor:
-                    segments.append({'type': 'empty', 'colspan': sp['start_col'] - cursor})
-                segments.append({'type': 'span', 'colspan': sp['colspan'], 'label': sp['label'], 'url': sp['url'], 'color': sp['color']})
-                cursor = sp['end_col'] + 1
-            if cursor < 7:
-                segments.append({'type': 'empty', 'colspan': 7 - cursor})
-            lane_segments.append(segments)
-        return lane_segments
-
-    week_bars = []
-    for week_days in calendar_weeks:
-        # 프로젝트 바 계산
-        project_lanes = build_week_bars(
-            week_days,
-            projects,
-            lambda p: p.start_date,
-            lambda p: p.end_date,
-            lambda p: getattr(p, 'theme_color', '#3B82F6'),
-            lambda p: request.build_absolute_uri(
-                request.path.replace('calendar/', f"projects/{p.pk}/")
-            ),
-            lambda p: p.title,
-        )
-        # 이벤트 바 계산
-        event_lanes = build_week_bars(
-            week_days,
-            events,
-            lambda e: e.start_date,
-            lambda e: e.end_date,
-            lambda e: e.priority_color,
-            lambda e: request.build_absolute_uri(
-                request.path.replace('calendar/', f"events/{e.pk}/")
-            ),
-            lambda e: e.title,
-        )
-        week_bars.append({
-            'project_lanes': project_lanes,
-            'event_lanes': event_lanes,
-        })
-    
-    # 템플릿에서 주와 바를 함께 순회할 수 있도록 결합 구조 생성
-    weeks = []
-    for i in range(len(calendar_weeks)):
-        weeks.append({
-            'days': calendar_weeks[i],
-            'bars': week_bars[i] if i < len(week_bars) else {'project_lanes': [], 'event_lanes': []},
-        })
-    
     context = {
         'year': year,
         'month': month,
         'month_name': month_name,
         'projects': projects,
-        'show_projects': show_projects,
-        'show_events': show_events,
-        'exclude_keyword': exclude_keyword,
-        'user_projects': user_projects,  # 일정 생성 시 프로젝트 선택용
-        'events': events,
-        'daily_projects': daily_projects,
-        'daily_events': daily_events,
-        'daily_projects_list': daily_projects_list,
-        'daily_events_list': daily_events_list,
-        'calendar': cal,
-        'calendar_weeks': calendar_weeks,
-        'week_bars': week_bars,
-        'show_bars': show_bars,
-        'weeks': weeks,
-        'today': today,
+        'calendar_weeks': weeks,
+        'week_bars': [],  # 기본 비활성
+        'show_projects': True,
+        'show_events': False,
+        'show_bars': False,
+        'today': today_dt,
         'prev_month': month - 1 if month > 1 else 12,
         'prev_year': year if month > 1 else year - 1,
         'next_month': month + 1 if month < 12 else 1,
         'next_year': year if month < 12 else year + 1,
+        'user_projects': user_projects,
     }
-    
+
     return render(request, 'wbs/calendar.html', context)
 
 def progress_calendar(request, project_pk):
@@ -820,239 +713,212 @@ def search(request):
     
     return render(request, 'wbs/search_results.html', results)
 
-
-# ==================== Event 관련 뷰 ====================
+# ----- 일정(Event) 뷰 최소 복구 -----
+from django.views.decorators.http import require_http_methods
 
 @login_required
 def event_list(request):
-    """일정 목록"""
-    events = Event.objects.filter(
-        Q(creator=request.user) | Q(attendees=request.user)
-    ).distinct().order_by('start_date', 'start_time')
-    
-    # 필터링
-    event_type = request.GET.get('type')
-    priority = request.GET.get('priority')
-    date_filter = request.GET.get('date')
-    
-    if event_type:
-        events = events.filter(event_type=event_type)
-    if priority:
-        events = events.filter(priority=priority)
-    if date_filter:
-        if date_filter == 'today':
-            events = events.filter(start_date=timezone.now().date())
-        elif date_filter == 'week':
-            week_start = timezone.now().date() - timedelta(days=timezone.now().weekday())
-            week_end = week_start + timedelta(days=6)
-            events = events.filter(start_date__range=[week_start, week_end])
-        elif date_filter == 'month':
-            today = timezone.now().date()
-            events = events.filter(
-                start_date__year=today.year,
-                start_date__month=today.month
-            )
-    
-    context = {
-        'events': events,
-        'event_types': Event.EVENT_TYPES,
-        'priority_levels': Event.PRIORITY_LEVELS,
-        'current_filters': {
-            'type': event_type,
-            'priority': priority,
-            'date': date_filter,
-        }
-    }
-    
-    return render(request, 'wbs/event_list.html', context)
-
+    events = Event.objects.filter(creator=request.user).order_by('-start_date')[:100]
+    return render(request, 'wbs/event_list.html', {'events': events})
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def event_create(request):
-    """일정 생성"""
     if request.method == 'POST':
         form = EventForm(request.POST, user=request.user)
-        attendees_form = EventAttendeesForm(request.POST, user=request.user)
-        
-        if form.is_valid() and attendees_form.is_valid():
+        if form.is_valid():
             event = form.save(commit=False)
             event.creator = request.user
+            event.end_date = event.end_date or event.start_date
             event.save()
-            
-            # 참석자 추가
-            attendees = attendees_form.cleaned_data.get('attendees', [])
-            event.attendees.set(attendees)
-            
-            # AJAX 요청인지 확인
+            form.save_m2m()
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': True,
-                    'event_id': event.id,
-                    'title': event.title,
-                    'type': event.get_event_type_display(),
-                    'priority_color': event.priority_color
-                })
-            
-            messages.success(request, '일정이 성공적으로 생성되었습니다.')
-            return redirect('wbs:event_detail', event.pk)
-        else:
-            # AJAX 요청인지 확인
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                errors = {}
-                if form.errors:
-                    errors.update(form.errors)
-                if attendees_form.errors:
-                    errors.update(attendees_form.errors)
-                return JsonResponse({
-                    'success': False,
-                    'error': '폼 검증 오류',
-                    'errors': errors
-                })
+                return JsonResponse({'success': True, 'id': event.id})
+            messages.success(request, '일정이 생성되었습니다.')
+            return redirect('wbs:calendar')
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'errors': form.errors}, status=400)
     else:
         form = EventForm(user=request.user)
-        attendees_form = EventAttendeesForm(user=request.user)
-    
-    context = {
-        'form': form,
-        'attendees_form': attendees_form,
-        'title': '새 일정 생성'
-    }
-    
-    return render(request, 'wbs/event_form.html', context)
-
+    return render(request, 'wbs/event_form.html', {'form': form})
 
 @login_required
 def event_detail(request, pk):
-    """일정 상세"""
     event = get_object_or_404(Event, pk=pk)
-    
-    # 권한 확인 (생성자이거나 참석자)
-    if event.creator != request.user and request.user not in event.attendees.all():
-        messages.error(request, '이 일정에 접근할 권한이 없습니다.')
-        return redirect('wbs:event_list')
-    
-    context = {
-        'event': event,
-        'can_edit': event.creator == request.user,
-    }
-    
-    return render(request, 'wbs/event_detail.html', context)
-
+    return render(request, 'wbs/event_detail.html', {'event': event})
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def event_edit(request, pk):
-    """일정 편집"""
     event = get_object_or_404(Event, pk=pk)
-    
-    # 권한 확인 (생성자만 편집 가능)
-    if event.creator != request.user:
-        messages.error(request, '이 일정을 편집할 권한이 없습니다.')
-        return redirect('wbs:event_detail', pk)
-    
     if request.method == 'POST':
         form = EventForm(request.POST, instance=event, user=request.user)
-        attendees_form = EventAttendeesForm(request.POST, user=request.user)
-        
-        if form.is_valid() and attendees_form.is_valid():
-            event = form.save()
-            
-            # 참석자 업데이트
-            attendees = attendees_form.cleaned_data.get('attendees', [])
-            event.attendees.set(attendees)
-            
-            messages.success(request, '일정이 성공적으로 수정되었습니다.')
-            return redirect('wbs:event_detail', event.pk)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '일정이 수정되었습니다.')
+            return redirect('wbs:event_detail', pk=pk)
     else:
         form = EventForm(instance=event, user=request.user)
-        attendees_form = EventAttendeesForm(
-            initial={'attendees': event.attendees.all()},
-            user=request.user
-        )
-    
-    context = {
-        'form': form,
-        'attendees_form': attendees_form,
-        'event': event,
-        'title': '일정 편집'
-    }
-    
-    return render(request, 'wbs/event_form.html', context)
-
+    return render(request, 'wbs/event_form.html', {'form': form, 'event': event})
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def event_delete(request, pk):
-    """일정 삭제"""
     event = get_object_or_404(Event, pk=pk)
-    
-    # 권한 확인 (생성자만 삭제 가능)
-    if event.creator != request.user:
-        messages.error(request, '이 일정을 삭제할 권한이 없습니다.')
-        return redirect('wbs:event_detail', pk)
-    
-    if request.method == 'POST':
-        event.delete()
-        messages.success(request, '일정이 성공적으로 삭제되었습니다.')
-        return redirect('wbs:event_list')
-    
-    context = {'event': event}
-    return render(request, 'wbs/event_confirm_delete.html', context)
-
+    # 권한: 생성자 또는 스태프만 삭제 허용
+    if not (request.user.is_staff or event.creator_id == request.user.id):
+        messages.error(request, '삭제 권한이 없습니다.')
+        return redirect('wbs:event_detail', pk=pk)
+    title = event.title
+    event.delete()
+    messages.success(request, f'일정 "{title}" 이(가) 삭제되었습니다.')
+    next_url = request.POST.get('next') or request.GET.get('next')
+    if next_url:
+        return redirect(next_url)
+    return redirect('wbs:event_list')
 
 @login_required
+@require_http_methods(["POST"])
 def event_toggle_complete(request, pk):
-    """일정 완료 토글"""
     event = get_object_or_404(Event, pk=pk)
-    
-    # 권한 확인
-    if event.creator != request.user and request.user not in event.attendees.all():
-        return JsonResponse({'error': '권한이 없습니다.'}, status=403)
-    
     event.is_completed = not event.is_completed
     event.save()
-    
-    return JsonResponse({
-        'success': True,
-        'is_completed': event.is_completed
-    })
-
+    return JsonResponse({'success': True, 'is_completed': event.is_completed})
 
 @login_required
+@require_http_methods(["POST"])
 def event_quick_create(request):
-    """빠른 일정 생성 (캘린더에서)"""
-    if request.method == 'POST':
-        title = request.POST.get('title')
-        start_date = request.POST.get('start_date')
-        event_type = request.POST.get('event_type', 'personal')
-        
-        print(f"Debug - title: {title}, start_date: {start_date}, event_type: {event_type}")  # 디버깅용
-        
-        if title and start_date:
-            try:
-                event = Event.objects.create(
-                    title=title,
-                    start_date=start_date,
-                    end_date=start_date,
-                    event_type=event_type,
-                    creator=request.user
-                )
-                
-                return JsonResponse({
-                    'success': True,
-                    'event_id': event.id,
-                    'title': event.title,
-                    'type': event.get_event_type_display(),
-                    'priority_color': event.priority_color
-                })
-            except Exception as e:
-                print(f"Debug - Error creating event: {e}")  # 디버깅용
-                return JsonResponse({'error': f'일정 생성 중 오류가 발생했습니다: {str(e)}'}, status=500)
-        else:
-            return JsonResponse({'error': f'필수 정보가 누락되었습니다. title: {title}, start_date: {start_date}'}, status=400)
-    
-    return JsonResponse({'error': 'POST 요청이 아닙니다.'}, status=405)
-
+    title = request.POST.get('title', '').strip()
+    start_date = request.POST.get('start_date')
+    if not title or not start_date:
+        return JsonResponse({'success': False, 'error': '제목과 날짜가 필요합니다.'}, status=400)
+    try:
+        sd = datetime.strptime(start_date, '%Y-%m-%d').date()
+        event = Event.objects.create(
+            title=title,
+            start_date=sd,
+            end_date=sd,
+            creator=request.user,
+        )
+        return JsonResponse({'success': True, 'id': event.id})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 @login_required
 def event_range_selector(request):
-    """일정 범위 선택기"""
+    # 간단한 선택 템플릿 렌더링 (이미 템플릿 존재)
     return render(request, 'wbs/event_range_selector.html')
+
+# ----- 개인 플래너 / 프로젝트 플래너 -----
+@login_required
+def personal_planner(request):
+    mode = request.GET.get('mode', 'week')
+    try:
+        start_str = request.GET.get('start')
+        base_date = datetime.strptime(start_str, '%Y-%m-%d').date() if start_str else timezone.localdate()
+    except Exception:
+        base_date = timezone.localdate()
+
+    if mode == 'month':
+        start_date = base_date.replace(day=1)
+        from calendar import monthrange
+        end_date = start_date.replace(day=monthrange(start_date.year, start_date.month)[1])
+        px_per_day = 24
+    else:
+        # week
+        start_date = base_date - timedelta(days=base_date.weekday())
+        end_date = start_date + timedelta(days=6)
+        px_per_day = 40
+
+    days = []
+    current = start_date
+    left_px = 0
+    while current <= end_date:
+        days.append((current, left_px))
+        left_px += px_per_day
+        current += timedelta(days=1)
+
+    # 사용자의 이벤트를 표 형태로 간단히 구성
+    events = Event.objects.filter(creator=request.user, start_date__lte=end_date, end_date__gte=start_date).order_by('start_date')
+    rows = []
+    for ev in events:
+        start = max(ev.start_date, start_date)
+        end = max(start, min(ev.end_date, end_date))
+        left = (start - start_date).days * px_per_day
+        width = ((end - start).days + 1) * px_per_day
+        color = ev.priority_color
+        rows.append({
+            'category': ev.get_event_type_display(),
+            'title': ev.title,
+            'part': '-',
+            'owner': request.user.username,
+            'start': ev.start_date,
+            'end': ev.end_date,
+            'days': (ev.end_date - ev.start_date).days + 1,
+            'progress': 0,
+            'left': left,
+            'width': width,
+            'color': color,
+        })
+
+    context = {
+        'mode': mode,
+        'start_date': start_date,
+        'end_date': end_date,
+        'days_with_pos': days,
+        'px_per_day': px_per_day,
+        'rows': rows,
+        'prev_start': (start_date - timedelta(days=7)).strftime('%Y-%m-%d') if mode == 'week' else (start_date - timedelta(days=30)).strftime('%Y-%m-%d'),
+        'next_start': (start_date + timedelta(days=7)).strftime('%Y-%m-%d') if mode == 'week' else (start_date + timedelta(days=30)).strftime('%Y-%m-%d'),
+    }
+    return render(request, 'wbs/personal_planner.html', context)
+
+@login_required
+def project_planner(request, pk):
+    project = get_object_or_404(Project, pk=pk)
+    mode = request.GET.get('mode', 'week')
+    start_date = project.start_date
+    end_date = project.end_date
+    px_per_day = 24 if mode == 'month' else 40
+
+    days = []
+    current = start_date
+    left_px = 0
+    while current <= end_date:
+        days.append((current, left_px))
+        left_px += px_per_day
+        current += timedelta(days=1)
+
+    # 프로젝트 단계 기반의 바 구성
+    rows = []
+    for ph in project.phases.all().order_by('order'):
+        start = max(ph.start_date, start_date)
+        end = max(start, min(ph.end_date, end_date))
+        left = (start - start_date).days * px_per_day
+        width = ((end - start).days + 1) * px_per_day
+        rows.append({
+            'category': 'Phase',
+            'title': ph.title,
+            'part': '-',
+            'owner': project.manager.username,
+            'start': ph.start_date,
+            'end': ph.end_date,
+            'days': (ph.end_date - ph.start_date).days + 1,
+            'progress': 0,
+            'left': left,
+            'width': width,
+            'color': project.theme_color,
+        })
+
+    context = {
+        'project': project,
+        'mode': mode,
+        'start_date': start_date,
+        'end_date': end_date,
+        'days_with_pos': days,
+        'px_per_day': px_per_day,
+        'rows': rows,
+        'prev_start': start_date.strftime('%Y-%m-%d'),
+        'next_start': start_date.strftime('%Y-%m-%d'),
+    }
+    return render(request, 'wbs/personal_planner.html', context)

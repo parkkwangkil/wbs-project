@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}개인 플래너 - WBS{% endblock %}
+{% block page_title %}개인 플래너{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+  <div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <h2 class="card-title" style="display:flex;align-items:center;gap:.5rem;">
+        <i class="fas fa-table" style="color: var(--text-secondary);"></i>
+        개인 프로젝트형 일정표 ({{ start_date|date:'Y-m-d' }} ~ {{ end_date|date:'Y-m-d' }})
+      </h2>
+      <div style="display:flex;gap:.5rem;align-items:center;">
+        <div class="btn-group" role="group" aria-label="mode">
+          <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_planner' %}?mode=week&start={{ start_date|date:'Y-m-d' }}" {% if mode == 'week' %}style="background: var(--btn-primary-bg); color: #fff;"{% endif %}>주간</a>
+          <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_planner' %}?mode=month&start={{ start_date|date:'Y-m-d' }}" {% if mode == 'month' %}style="background: var(--btn-primary-bg); color: #fff;"{% endif %}>월간</a>
+        </div>
+        <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_planner' %}?mode={{ mode }}&start={{ prev_start }}"><i class="fas fa-chevron-left"></i></a>
+        <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_planner' %}?mode={{ mode }}&start={{ next_start }}"><i class="fas fa-chevron-right"></i></a>
+        <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_planner' %}?mode={{ mode }}"><i class="fas fa-sync"></i> 새로고침</a>
+        <a class="btn btn-primary btn-sm" href="{% url 'wbs:event_create' %}"><i class="fas fa-plus"></i> 새 일정</a>
+      </div>
+    </div>
+    <div class="card-body">
+      <style>
+        .planner { width: 100%; border-collapse: collapse; }
+        .planner th, .planner td { border:1px solid var(--card-border); padding: .5rem; font-size: 0.875rem; }
+        .planner thead th { background: var(--sidebar-hover); color: var(--text-heading); text-align: center; }
+        .right-grid { position: relative; min-width: 720px; }
+        .grid-row { position: relative; height: 28px; border-bottom: 1px solid var(--card-border); }
+        .grid-cell { position: absolute; top:0; bottom:0; border-right:1px solid var(--card-border); }
+        .grid-bar { position: absolute; top:4px; height:20px; border-radius: 6px; color:#fff; display:flex; align-items:center; padding: 0 8px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .legend { display:flex; gap:1rem; align-items:center; margin-bottom:.75rem; }
+        .dot { width:10px; height:10px; border-radius: 9999px; display:inline-block; margin-right:.25rem; }
+      </style>
+
+      <div class="legend">
+        <span><span class="dot" style="background:#7C8EDE"></span>개인</span>
+        <span><span class="dot" style="background:#10B981"></span>낮음/보통</span>
+        <span><span class="dot" style="background:#F59E0B"></span>높음</span>
+        <span><span class="dot" style="background:#EF4444"></span>긴급</span>
+      </div>
+
+      <table class="planner">
+        <colgroup>
+          <col style="width: 80px;">
+          <col style="width: 240px;">
+          <col style="width: 120px;">
+          <col style="width: 120px;">
+          <col style="width: 120px;">
+          <col style="width: 120px;">
+          <col style="width: 80px;">
+          <col style="width: 100px;">
+          <col>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>항목</th>
+            <th>내용</th>
+            <th>파트</th>
+            <th>작업자</th>
+            <th>시작일</th>
+            <th>종료일</th>
+            <th>작업기간</th>
+            <th>진행사항</th>
+            <th>
+              <!-- 타임라인 헤더 일자 -->
+              <div class="right-grid" id="gridHeader" style="height: 28px; overflow: hidden;">
+                {% for dp in days_with_pos %}
+                  <div class="grid-cell" style="left: {{ dp.1 }}px; width: {{ px_per_day }}px; text-align:center; font-weight:600; color: var(--text-secondary);">
+                    {{ dp.0|date:'m/d' }}
+                  </div>
+                {% endfor %}
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+            <tr>
+              <td>{{ r.category }}</td>
+              <td>{{ r.title }}</td>
+              <td>{{ r.part }}</td>
+              <td>{{ r.owner }}</td>
+              <td>{{ r.start|date:'Y-m-d' }}</td>
+              <td>{{ r.end|date:'Y-m-d' }}</td>
+              <td style="text-align:right;">{{ r.days }}</td>
+              <td>{{ r.progress }}%</td>
+              <td>
+                <div class="right-grid" style="height: 28px; overflow: hidden;">
+                  <div class="grid-bar" style="left: {{ r.left }}px; width: {{ r.width }}px; background: {{ r.color }};" title="{{ r.title }}">
+                    {{ r.title }}
+                  </div>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="9" style="text-align:center; color: var(--text-secondary); padding: 1rem;">표시할 일정이 없습니다. 우측 상단의 '새 일정'을 눌러 추가하세요.</td></tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="9" style="text-align:right; color:#c2410c; font-weight:700;">
+              전체일정 {{ start_date|date:'Y-m-d' }} ~ {{ end_date|date:'Y-m-d' }}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+

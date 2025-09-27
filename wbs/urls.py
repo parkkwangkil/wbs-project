@@ -16,6 +16,8 @@ urlpatterns = [
     path('projects/create/', views.project_create, name='project_create'),
     path('projects/<int:pk>/', views.project_detail, name='project_detail'),
     path('projects/<int:pk>/edit/', views.project_edit, name='project_edit'),
+    path('projects/<int:pk>/delete/', views.project_delete, name='project_delete'),
+    path('projects/team/', views.team_projects, name='team_projects'),
     
     # 프로젝트 단계 관련
     path('projects/<int:project_pk>/phases/create/', views.phase_create, name='phase_create'),
@@ -26,6 +28,10 @@ urlpatterns = [
     
     # 캘린더
     path('calendar/', views.calendar, name='calendar'),
+    # 개인 플래너
+    path('personal/', views.personal_planner, name='personal_planner'),
+    # 프로젝트별 플래너
+    path('projects/<int:pk>/planner/', views.project_planner, name='project_planner'),
     
     # 진행사항 캘린더
     path('projects/<int:project_pk>/progress-calendar/', views.progress_calendar, name='progress_calendar'),
@@ -57,8 +63,8 @@ urlpatterns = [
         
     # 검색
     path('search/', views.search, name='search'),
-    
-    # 일정 관련
+
+    # 일정 관련 (복구)
     path('events/', views.event_list, name='event_list'),
     path('events/create/', views.event_create, name='event_create'),
     path('events/range-selector/', views.event_range_selector, name='event_range_selector'),

@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+
+{% block title %}간트 타임라인 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}간트 타임라인{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+  <div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <h2 class="card-title" style="display:flex;align-items:center;gap:.5rem;">
+        <i class="fas fa-chart-bar" style="color: var(--text-secondary);"></i>
+        {{ start_date|date:"Y-m-d" }} ~ {{ end_date|date:"Y-m-d" }}
+      </h2>
+      <div>
+        <a class="btn btn-secondary btn-sm" href="{% url 'wbs:gantt_timeline' %}?start={{ start_date|date:'Y-m-d' }}&end={{ end_date|date:'Y-m-d' }}">
+          <i class="fas fa-sync"></i> 새로고침
+        </a>
+      </div>
+    </div>
+    <div class="card-body">
+      <style>
+        /* Planner table (Figma style) */
+        .planner thead th { background: var(--sidebar-hover); color: var(--text-heading); font-weight: 700; padding: .5rem; border: 1px solid var(--card-border); }
+        .planner tbody td { padding: .5rem; border: 1px solid var(--card-border); vertical-align: middle; }
+        .planner tbody tr:nth-child(odd) td { background: var(--bg-surface); }
+
+        /* Right timeline cell */
+        .right-grid { position: relative; min-height: 28px; border-left: 0; }
+        .right-grid .grid-cell { position: absolute; top: 0; height: 28px; border-right: 1px solid var(--card-border); color: var(--text-secondary); font-size: 12px; display:flex; align-items:center; justify-content:center; }
+
+        /* Bars */
+        .grid-bar { position: absolute; top: 4px; height: 20px; border-radius: 10px; color: #fff; font-size: 12px; display:flex; align-items:center; padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 6px 16px rgba(0,0,0,.12); border: 1px solid rgba(0,0,0,.06); }
+        .grid-bar::after { content: ""; position:absolute; right: -5px; top: 5px; width: 10px; height: 10px; transform: rotate(45deg); border-radius: 2px; background: currentColor; opacity: .85; filter: brightness(0.95); }
+
+        /* Legend */
+        .legend { display:flex; gap:12px; align-items:center; margin-bottom: .75rem; }
+        .legend .chip { display:inline-flex; align-items:center; gap:6px; font-size: 12px; color: var(--text-secondary); }
+        .legend .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+      </style>
+
+      <div class="legend">
+        <span class="chip"><span class="dot" style="background:#3B82F6"></span>프로젝트</span>
+        <span class="chip"><span class="dot" style="background:#10B981"></span>낮음/일반</span>
+        <span class="chip"><span class="dot" style="background:#F59E0B"></span>높음</span>
+        <span class="chip"><span class="dot" style="background:#EF4444"></span>긴급</span>
+      </div>
+
+      <table class="planner" style="width:100%; border-collapse:separate; border-spacing:0;">
+        <colgroup>
+          <col style="width: 260px;">
+          <col style="width: 120px;">
+          <col style="width: 120px;">
+          <col style="width: 100px;">
+          <col style="width: 120px;">
+          <col style="width: 120px;">
+          <col style="width: 90px;">
+          <col>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>프로젝트</th>
+            <th>PM</th>
+            <th>TL</th>
+            <th>팀원수</th>
+            <th>시작일</th>
+            <th>종료일</th>
+            <th>기간</th>
+            <th>
+              <div class="right-grid" style="height: 28px; overflow: hidden; position:relative; background-image: repeating-linear-gradient(to right, var(--card-border), var(--card-border) 1px, transparent 1px, transparent {{ px_per_day }}px);">
+                {% for dp in days_with_pos %}
+                  <div class="grid-cell" style="left: {{ dp.1 }}px; width: {{ px_per_day }}px; text-align:center; font-weight:600; color: var(--text-secondary);">
+                    {{ dp.0|date:'m/d' }}
+                  </div>
+                {% endfor %}
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+            <tr>
+              <td>{{ r.title }}</td>
+              <td>{{ r.manager }}</td>
+              <td>{{ r.tl }}</td>
+              <td style="text-align:right;">{{ r.team_count }}</td>
+              <td>{{ r.start|date:'Y-m-d' }}</td>
+              <td>{{ r.end|date:'Y-m-d' }}</td>
+              <td style="text-align:right;">{{ r.days }}</td>
+              <td>
+                <div class="right-grid" style="height: 28px; overflow:hidden; position:relative; background-image: repeating-linear-gradient(to right, var(--card-border), var(--card-border) 1px, transparent 1px, transparent {{ px_per_day }}px);">
+                  <div class="grid-bar" style="left: {{ r.left }}px; width: {{ r.width }}px; background: {{ r.color }}; color: #fff;" title="{{ r.title }}">
+                    {{ r.title }}
+                  </div>
+                  {% for ev in r.events %}
+                    <div class="grid-bar" style="left: {{ ev.left }}px; width: {{ ev.width }}px; background: {{ ev.color }}; opacity:.95" title="{{ ev.title }}">
+                      {{ ev.title }}
+                    </div>
+                  {% endfor %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+          <tr>
+            <td style="font-weight:600; border-top:2px solid var(--card-border);">개인 일정</td>
+            <td colspan="6"></td>
+            <td>
+              <div class="right-grid" style="height: 28px; overflow:hidden; position:relative; background-image: repeating-linear-gradient(to right, var(--card-border), var(--card-border) 1px, transparent 1px, transparent {{ px_per_day }}px);">
+                {% for ev in personal_events %}
+                  <div class="grid-bar" style="left: {{ ev.left }}px; width: {{ ev.width }}px; background: {{ ev.color }}; opacity:.95" title="{{ ev.title }}">{{ ev.title }}</div>
+                {% endfor %}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Quick Create Project Modal Trigger -->
+      <div style="display:flex; justify-content:flex-end; margin-top: .75rem;">
+        <button class="btn btn-primary btn-sm" onclick="openQuickProjectModal()"><i class="fas fa-plus"></i> 새 프로젝트</button>
+      </div>
+
+      <!-- Quick Project Modal -->
+      <div id="quickProjectModal" class="ds-overlay" style="display:none;">
+        <div class="ds-modal">
+          <div class="ds-modal-header">
+            <h3 class="ds-modal-title"><i class="fas fa-folder-plus"></i> 새 프로젝트</h3>
+            <button class="ds-close" onclick="closeQuickProjectModal()"><i class="fas fa-times"></i></button>
+          </div>
+          <form id="quickProjectForm">
+            {% csrf_token %}
+            <div class="ds-grid-2" style="margin-bottom: 12px;">
+              <div class="ds-field">
+                <label class="ds-label">프로젝트명</label>
+                <input class="ds-input" name="title" required placeholder="예: 웹사이트 리뉴얼">
+              </div>
+              <div class="ds-field">
+                <label class="ds-label">색상</label>
+                <select class="ds-select" name="color_theme">
+                  <option value="blue">파란색</option>
+                  <option value="green">초록색</option>
+                  <option value="purple">보라색</option>
+                  <option value="red">빨간색</option>
+                  <option value="orange">주황색</option>
+                  <option value="teal">청록색</option>
+                  <option value="pink">분홍색</option>
+                  <option value="indigo">남색</option>
+                  <option value="yellow">노란색</option>
+                  <option value="gray">회색</option>
+                  <option value="cyan">시안색</option>
+                  <option value="lime">라임색</option>
+                </select>
+              </div>
+            </div>
+            <div class="ds-grid-2" style="margin-bottom: 12px;">
+              <div class="ds-field">
+                <label class="ds-label">시작일</label>
+                <input class="ds-date" type="date" name="start_date" required>
+              </div>
+              <div class="ds-field">
+                <label class="ds-label">종료일</label>
+                <input class="ds-date" type="date" name="end_date" required>
+              </div>
+            </div>
+            <div class="ds-grid-2" style="margin-bottom: 12px;">
+              <div class="ds-field">
+                <label class="ds-label">PM (자동: 나)</label>
+                <input class="ds-input" value="{{ request.user.username }}" disabled>
+              </div>
+              <div class="ds-field">
+                <label class="ds-label">TL</label>
+                <select class="ds-select" name="tl">
+                  <option value="">선택</option>
+                  {% for u in users %}
+                    <option value="{{ u.id }}">{{ u.username }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="ds-field" style="margin-bottom: 12px;">
+              <label class="ds-label">팀원</label>
+              <select class="ds-select" name="team_members" multiple size="5">
+                {% for u in users %}
+                  <option value="{{ u.id }}">{{ u.username }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="ds-actions">
+              <button type="button" class="btn-secondary" onclick="closeQuickProjectModal()">취소</button>
+              <button type="submit" class="btn-primary">생성</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <script>
+        function openQuickProjectModal(){ document.getElementById('quickProjectModal').style.display='block'; }
+        function closeQuickProjectModal(){ document.getElementById('quickProjectModal').style.display='none'; }
+        document.getElementById('quickProjectForm')?.addEventListener('submit', async function(e){
+          e.preventDefault();
+          const form = new FormData(this);
+          form.append('csrfmiddlewaretoken', document.querySelector('input[name=csrfmiddlewaretoken]').value);
+          const res = await fetch('{% url "wbs:project_quick_create" %}', { method:'POST', body: form, headers: {'X-Requested-With': 'XMLHttpRequest'} });
+          if(!res.ok){ alert('생성 실패'); return; }
+          const data = await res.json();
+          if(data.success){ closeQuickProjectModal(); location.reload(); } else { alert(data.error || '생성 실패'); }
+        });
+      </script>
+      <script>
+        (function(){
+          const CELL_WIDTH = 120; // px per day
+          const ROW_HEIGHT = 36;
+
+          const right = document.getElementById('ganttRight');
+          const dragEl = document.getElementById('dragSelect');
+
+          // Helper: place bars
+          function dateIndex(dateStr){
+            const cells = right.querySelectorAll('.gantt-header + .gantt-row .gantt-cell, .gantt-header .gantt-header-cell');
+            const firstRow = right.querySelector('.gantt-header');
+            const dates = Array.from(firstRow.children).map((_, i) => right.querySelector('.gantt-row .gantt-cell:nth-child(' + (i+1) + ')')?.getAttribute('data-date'));
+            return dates.indexOf(dateStr);
+          }
+
+          function placeBar(rowEl, startDate, endDate, color, label){
+            const startIdx = dateIndex(startDate);
+            const endIdx = dateIndex(endDate);
+            if(startIdx < 0 || endIdx < 0) return;
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            bar.style.left = (startIdx * CELL_WIDTH + 4) + 'px';
+            bar.style.top = '7px';
+            bar.style.width = ((endIdx - startIdx + 1) * CELL_WIDTH - 8) + 'px';
+            bar.style.background = color || getComputedStyle(document.documentElement).getPropertyValue('--brand-primary');
+            const text = document.createElement('span');
+            text.textContent = label || '';
+            const endSpan = document.createElement('span');
+            const end = new Date(endDate);
+            const mm = String(end.getMonth() + 1).padStart(2, '0');
+            const dd = String(end.getDate()).padStart(2, '0');
+            endSpan.className = 'end-label';
+            endSpan.textContent = `→ ${mm}/${dd}`;
+            const arrow = document.createElement('span');
+            arrow.className = 'arrow';
+            arrow.style.background = bar.style.background;
+            bar.appendChild(text);
+            bar.appendChild(endSpan);
+            bar.appendChild(arrow);
+            rowEl.appendChild(bar);
+          }
+
+          // Render bars from context (embedded via data attributes)
+          const projectRows = right.querySelectorAll('.gantt-row[data-lane="project"]');
+          const projectData = {{ project_bars|safe|default:'[]' }};
+          projectRows.forEach((row)=>{
+            const pid = parseInt(row.getAttribute('data-project-id'), 10);
+            projectData.filter(b=>b.id===pid).forEach(b=>{
+              placeBar(row, b.start_date, b.end_date, b.color, b.title);
+            });
+          });
+
+          const personalRow = right.querySelector('.gantt-row[data-lane="personal"]');
+          const personalData = {{ personal_events|safe|default:'[]' }};
+          personalData.forEach(b=>placeBar(personalRow, b.start_date, b.end_date, b.color, b.title));
+
+          // Also render per-project events as thinner bars under project bar
+          const eventsByProject = {{ events_by_project|safe|default:'{}' }};
+          projectRows.forEach((row)=>{
+            const pid = parseInt(row.getAttribute('data-project-id'), 10);
+            (eventsByProject[pid] || []).forEach(ev => {
+              const mini = document.createElement('div');
+              placeBar(row, ev.start_date, ev.end_date, ev.color, ev.title);
+            });
+          });
+
+          // Drag-to-create (on personal row for simplicity; can extend per-project)
+          let dragging = false; let startX = 0; let startCell = null; let currentRow = null;
+          right.addEventListener('mousedown', (e)=>{
+            const cell = e.target.closest('.gantt-cell');
+            const row = e.target.closest('.gantt-row');
+            if(!cell || !row) return;
+            dragging = true; startX = e.clientX; startCell = cell; currentRow = row;
+            const rect = right.getBoundingClientRect();
+            dragEl.style.display = 'block';
+            dragEl.style.left = (cell.offsetLeft + 2) + 'px';
+            dragEl.style.top = (row.offsetTop + 2) + 'px';
+            dragEl.style.width = (CELL_WIDTH - 4) + 'px';
+            dragEl.style.height = (ROW_HEIGHT - 4) + 'px';
+          });
+          right.addEventListener('mousemove', (e)=>{
+            if(!dragging) return;
+            const dx = e.clientX - startX;
+            const days = Math.max(1, Math.round(dx / CELL_WIDTH) + 1);
+            dragEl.style.width = (days * CELL_WIDTH - 4) + 'px';
+          });
+          right.addEventListener('mouseup', async (e)=>{
+            if(!dragging) return; dragging = false; dragEl.style.display='none';
+            const startDate = startCell.getAttribute('data-date');
+            const width = parseInt(dragEl.style.width, 10) + 4;
+            const daySpan = Math.max(1, Math.round(width / CELL_WIDTH));
+            const endIndex = dateIndex(startDate) + daySpan - 1;
+            const header = right.querySelector('.gantt-header');
+            const endDate = right.querySelector('.gantt-row .gantt-cell:nth-child(' + (endIndex+1) + ')')?.getAttribute('data-date');
+            const title = prompt('일정 제목을 입력하세요');
+            if(!title) return;
+
+            try {
+              const form = new FormData();
+              form.append('title', title);
+              form.append('start_date', startDate);
+              form.append('end_date', endDate || startDate);
+              form.append('event_type', 'personal');
+              form.append('priority', 'medium');
+              form.append('is_all_day', 'on');
+              form.append('csrfmiddlewaretoken', document.querySelector('input[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}');
+              const res = await fetch('{% url "wbs:event_create" %}', { method: 'POST', body: form, headers: { 'X-Requested-With': 'XMLHttpRequest' }});
+              if(!res.ok){ throw new Error('HTTP ' + res.status); }
+              const data = await res.json();
+              if(data.success){ location.reload(); } else { alert(data.error || '생성 실패'); }
+            } catch(err){
+              alert('생성 중 오류: ' + err.message);
+            }
+          });
+        })();
+      </script>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+

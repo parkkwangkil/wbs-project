@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}삭제 완료{% endblock %}
+{% block page_title %}삭제 완료{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+  <div class="card">
+    <div class="card-body" style="text-align:center; padding: 2rem;">
+      <i class="fas fa-check-circle" style="font-size: 2rem; color: #10B981; margin-bottom: 0.75rem;"></i>
+      <h3 style="margin: 0 0 0.5rem 0;">{{ message|default:'삭제가 완료되었습니다.' }}</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">잠시 후 이동합니다...</p>
+      <a class="btn btn-primary" href="{{ redirect_url|default:'/' }}">바로 이동</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  setTimeout(function(){
+    window.location.href = "{{ redirect_url|default:'/' }}";
+  }, 1500);
+</script>
+{% endblock %}

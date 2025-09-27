@@ -79,6 +79,7 @@ class Project(models.Model):
     title = models.CharField(max_length=200, verbose_name='프로젝트명')
     description = models.TextField(verbose_name='설명')
     manager = models.ForeignKey(User, on_delete=models.CASCADE, related_name='managed_projects', verbose_name='매니저')
+    tl = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lead_projects', verbose_name='기술 리드')
     team_members = models.ManyToManyField(User, blank=True, related_name='participating_projects', verbose_name='팀원')
     start_date = models.DateField(verbose_name='시작일')
     end_date = models.DateField(verbose_name='종료일')

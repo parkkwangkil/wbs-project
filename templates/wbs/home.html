@@ -7,7 +7,7 @@
 {% block content %}
     <!-- Stats Cards -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-        <div class="card">
+        <a href="{% url 'wbs:project_list' %}" class="card" style="text-decoration: none; color: inherit; display: block;">
             <div class="card-body" style="text-align: center; padding: 2rem;">
                 <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #EBF4FF, #DBEAFE); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);">
                     <i class="fas fa-project-diagram" style="color: var(--info-color); font-size: 1.75rem;"></i>
@@ -15,8 +15,8 @@
                 <h3 style="color: var(--text-heading); font-size: 2.5rem; font-weight: 800; margin: 0 0 0.5rem 0; line-height: 1;">{{ total_projects }}</h3>
                 <p style="color: var(--text-secondary); margin: 0; font-weight: 500; font-size: 0.95rem;">전체 프로젝트</p>
             </div>
-        </div>
-        <div class="card">
+        </a>
+        <a href="{% url 'wbs:project_list' %}?status=in_progress" class="card" style="text-decoration: none; color: inherit; display: block;">
             <div class="card-body" style="text-align: center; padding: 2rem;">
                 <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #FFFBEB, #FEF3C7); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);">
                     <i class="fas fa-clock" style="color: var(--warning-color); font-size: 1.75rem;"></i>
@@ -24,8 +24,8 @@
                 <h3 style="color: var(--text-heading); font-size: 2.5rem; font-weight: 800; margin: 0 0 0.5rem 0; line-height: 1;">{{ active_projects }}</h3>
                 <p style="color: var(--text-secondary); margin: 0; font-weight: 500; font-size: 0.95rem;">진행중 프로젝트</p>
             </div>
-        </div>
-        <div class="card">
+        </a>
+        <a href="{% url 'wbs:project_list' %}?status=completed" class="card" style="text-decoration: none; color: inherit; display: block;">
             <div class="card-body" style="text-align: center; padding: 2rem;">
                 <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);">
                     <i class="fas fa-check-circle" style="color: var(--success-color); font-size: 1.75rem;"></i>
@@ -33,8 +33,8 @@
                 <h3 style="color: var(--text-heading); font-size: 2.5rem; font-weight: 800; margin: 0 0 0.5rem 0; line-height: 1;">{{ completed_projects }}</h3>
                 <p style="color: var(--text-secondary); margin: 0; font-weight: 500; font-size: 0.95rem;">완료된 프로젝트</p>
             </div>
-        </div>
-        <div class="card">
+        </a>
+        <a href="{% url 'wbs:project_list' %}?has_comments=1" class="card" style="text-decoration: none; color: inherit; display: block;">
             <div class="card-body" style="text-align: center; padding: 2rem;">
                 <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #F0F9FF, #DBEAFE); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);">
                     <i class="fas fa-comments" style="color: var(--info-color); font-size: 1.75rem;"></i>
@@ -42,7 +42,7 @@
                 <h3 style="color: var(--text-heading); font-size: 2.5rem; font-weight: 800; margin: 0 0 0.5rem 0; line-height: 1;">{{ total_comments }}</h3>
                 <p style="color: var(--text-secondary); margin: 0; font-weight: 500; font-size: 0.95rem;">댓글 수</p>
             </div>
-        </div>
+        </a>
     </div>
 
     <!-- Main Content Grid -->

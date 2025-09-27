@@ -6,7 +6,7 @@ from .models import Project, ProjectPhase, Comment, DailyProgress, TaskChecklist
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
-        fields = ['title', 'description', 'start_date', 'end_date', 'status', 'priority', 'budget', 'color_theme']
+        fields = ['title', 'description', 'start_date', 'end_date', 'status', 'priority', 'budget', 'color_theme', 'tl', 'team_members']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
@@ -16,6 +16,8 @@ class ProjectForm(forms.ModelForm):
             'priority': forms.Select(attrs={'class': 'form-control'}),
             'budget': forms.NumberInput(attrs={'class': 'form-control'}),
             'color_theme': forms.Select(attrs={'class': 'form-control'}),
+            'tl': forms.Select(attrs={'class': 'form-control'}),
+            'team_members': forms.SelectMultiple(attrs={'class': 'form-control'}),
         }
 
 class ProjectPhaseForm(forms.ModelForm):

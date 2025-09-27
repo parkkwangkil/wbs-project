@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}프로젝트 삭제 확인{% endblock %}
+{% block page_title %}프로젝트 삭제{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title"><i class="fas fa-trash" style="color:#ef4444;margin-right:.5rem;"></i>프로젝트 삭제</h2>
+    </div>
+    <div class="card-body">
+      <p style="margin-bottom:1rem;color:var(--text-body);">프로젝트 "<strong>{{ project.title }}</strong>" 를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
+      <form method="post">
+        {% csrf_token %}
+        {% if request.GET.next %}
+          <input type="hidden" name="next" value="{{ request.GET.next }}">
+        {% endif %}
+        <a href="{% url 'wbs:project_detail' project.pk %}" class="btn btn-secondary">취소</a>
+        <button type="submit" class="btn btn-primary" style="background:#ef4444;">삭제</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
