@@ -1,0 +1,372 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- 메인 폼 -->
+    <div class="lg:col-span-2">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-calendar-plus" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                    {{ title }}
+                </h2>
+            </div>
+            <div class="card-body">
+                <form method="post" id="eventForm">
+                    {% csrf_token %}
+                    
+                    <!-- 기본 정보 -->
+                    <div style="margin-bottom: 2rem;">
+                        <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-info-circle"></i>
+                            기본 정보
+                        </h4>
+                        
+                        <div style="display: grid; gap: 1.5rem;">
+                            <div>
+                                <label for="{{ form.title.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                    제목 <span style="color: #ef4444;">*</span>
+                                </label>
+                                {{ form.title }}
+                                {% if form.title.errors %}
+                                    <div style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                        {{ form.title.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <label for="{{ form.description.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                    설명
+                                </label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                        {{ form.description.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <label for="{{ form.event_type.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                        유형
+                                    </label>
+                                    {{ form.event_type }}
+                                    {% if form.event_type.errors %}
+                                        <div style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                            {{ form.event_type.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div>
+                                    <label for="{{ form.priority.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                        우선순위
+                                    </label>
+                                    {{ form.priority }}
+                                    {% if form.priority.errors %}
+                                        <div style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                            {{ form.priority.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 날짜/시간 정보 -->
+                    <div style="margin-bottom: 2rem;">
+                        <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-calendar-alt"></i>
+                            일정 정보
+                        </h4>
+                        
+                        <div style="display: grid; gap: 1.5rem;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <label for="{{ form.start_date.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                        시작일 <span style="color: #ef4444;">*</span>
+                                    </label>
+                                    {{ form.start_date }}
+                                    {% if form.start_date.errors %}
+                                        <div style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                            {{ form.start_date.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div>
+                                    <label for="{{ form.end_date.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                        종료일 <span style="color: #ef4444;">*</span>
+                                    </label>
+                                    {{ form.end_date }}
+                                    {% if form.end_date.errors %}
+                                        <div style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                            {{ form.end_date.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--sidebar-hover); border-radius: 8px;">
+                                {{ form.is_all_day }}
+                                <label for="{{ form.is_all_day.id_for_label }}" style="color: var(--text-heading); font-weight: 500; cursor: pointer;">
+                                    하루 종일
+                                </label>
+                            </div>
+                            
+                            <div id="timeFields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <label for="{{ form.start_time.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                        시작 시간
+                                    </label>
+                                    {{ form.start_time }}
+                                    {% if form.start_time.errors %}
+                                        <div style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                            {{ form.start_time.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div>
+                                    <label for="{{ form.end_time.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                        종료 시간
+                                    </label>
+                                    {{ form.end_time }}
+                                    {% if form.end_time.errors %}
+                                        <div style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                            {{ form.end_time.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 위치/링크 정보 -->
+                    <div style="margin-bottom: 2rem;">
+                        <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-map-marker-alt"></i>
+                            위치 및 링크
+                        </h4>
+                        
+                        <div style="display: grid; gap: 1.5rem;">
+                            <div>
+                                <label for="{{ form.location.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                    장소
+                                </label>
+                                {{ form.location }}
+                                {% if form.location.errors %}
+                                    <div style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                        {{ form.location.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <label for="{{ form.meeting_link.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                    회의 링크
+                                </label>
+                                {{ form.meeting_link }}
+                                {% if form.meeting_link.errors %}
+                                    <div style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                        {{ form.meeting_link.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 관련 프로젝트 -->
+                    <div style="margin-bottom: 2rem;">
+                        <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-project-diagram"></i>
+                            관련 프로젝트
+                        </h4>
+                        
+                        <div>
+                            <label for="{{ form.related_project.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                프로젝트 선택
+                            </label>
+                            {{ form.related_project }}
+                            {% if form.related_project.errors %}
+                                <div style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                    {{ form.related_project.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- 알림 및 설정 -->
+                    <div style="margin-bottom: 2rem;">
+                        <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-bell"></i>
+                            알림 및 설정
+                        </h4>
+                        
+                        <div style="display: grid; gap: 1.5rem;">
+                            <div>
+                                <label for="{{ form.reminder_minutes.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                    알림 시간 (분)
+                                </label>
+                                {{ form.reminder_minutes }}
+                                {% if form.reminder_minutes.errors %}
+                                    <div style="color: #ef4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                        {{ form.reminder_minutes.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--sidebar-hover); border-radius: 8px;">
+                                    {{ form.is_recurring }}
+                                    <label for="{{ form.is_recurring.id_for_label }}" style="color: var(--text-heading); font-weight: 500; cursor: pointer;">
+                                        반복 일정
+                                    </label>
+                                </div>
+                                
+                                <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--sidebar-hover); border-radius: 8px;">
+                                    {{ form.is_private }}
+                                    <label for="{{ form.is_private.id_for_label }}" style="color: var(--text-heading); font-weight: 500; cursor: pointer;">
+                                        비공개
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 폼 오류 표시 -->
+                    {% if form.non_field_errors %}
+                        <div style="background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                            {{ form.non_field_errors.0 }}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- 제출 버튼 -->
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                        <a href="{% if event %}{% url 'wbs:event_detail' event.pk %}{% else %}{% url 'wbs:event_list' %}{% endif %}" 
+                           class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                            취소
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            {% if event %}수정{% else %}생성{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 사이드바 -->
+    <div>
+        <!-- 참석자 선택 -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-users" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                    참석자 선택
+                </h3>
+            </div>
+            <div class="card-body">
+                <form method="post" id="attendeesForm">
+                    {% csrf_token %}
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        {% for checkbox in attendees_form.attendees %}
+                            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; border-radius: 4px; transition: background 0.2s ease;">
+                                {{ checkbox.tag }}
+                                <label for="{{ checkbox.id_for_label }}" style="color: var(--text-heading); cursor: pointer; flex: 1;">
+                                    {{ checkbox.choice_label }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 도움말 -->
+        <div class="card" style="margin-top: 1.5rem;">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-question-circle" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                    도움말
+                </h3>
+            </div>
+            <div class="card-body">
+                <div style="font-size: 0.875rem; color: var(--text-body); line-height: 1.6;">
+                    <p style="margin: 0 0 1rem 0;">
+                        <strong>일정 유형:</strong><br>
+                        • 개인 일정: 개인적인 일정<br>
+                        • 회의: 팀 회의나 미팅<br>
+                        • 마감일: 중요한 마감일<br>
+                        • 알림: 기억해야 할 사항<br>
+                        • 휴일: 휴가나 휴일<br>
+                        • 기타: 기타 일정
+                    </p>
+                    
+                    <p style="margin: 0 0 1rem 0;">
+                        <strong>우선순위:</strong><br>
+                        • 낮음: 중요하지 않은 일정<br>
+                        • 보통: 일반적인 일정<br>
+                        • 높음: 중요한 일정<br>
+                        • 긴급: 매우 중요한 일정
+                    </p>
+                    
+                    <p style="margin: 0;">
+                        <strong>알림:</strong><br>
+                        일정 시작 전 미리 알림을 받을 수 있습니다.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 하루 종일 체크박스 토글
+document.getElementById('{{ form.is_all_day.id_for_label }}').addEventListener('change', function() {
+    const timeFields = document.getElementById('timeFields');
+    if (this.checked) {
+        timeFields.style.display = 'none';
+        document.getElementById('{{ form.start_time.id_for_label }}').value = '';
+        document.getElementById('{{ form.end_time.id_for_label }}').value = '';
+    } else {
+        timeFields.style.display = 'grid';
+    }
+});
+
+// 페이지 로드 시 초기 상태 설정
+document.addEventListener('DOMContentLoaded', function() {
+    const isAllDay = document.getElementById('{{ form.is_all_day.id_for_label }}');
+    const timeFields = document.getElementById('timeFields');
+    
+    if (isAllDay.checked) {
+        timeFields.style.display = 'none';
+    }
+});
+
+// 폼 제출 시 참석자 정보도 함께 전송
+document.getElementById('eventForm').addEventListener('submit', function(e) {
+    const attendeesForm = document.getElementById('attendeesForm');
+    const attendeesData = new FormData(attendeesForm);
+    
+    // 참석자 데이터를 메인 폼에 추가
+    for (let [key, value] of attendeesData.entries()) {
+        if (key === 'attendees') {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = value;
+            this.appendChild(input);
+        }
+    }
+});
+</script>
+{% endblock %}

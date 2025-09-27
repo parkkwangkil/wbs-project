@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+
+{% block title %}일정 관리 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}일정 관리{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+    <!-- 필터 및 액션 -->
+    <div class="card">
+        <div class="card-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 class="card-title">
+                    <i class="fas fa-calendar-alt" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                    내 일정
+                </h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <a href="{% url 'wbs:event_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        새 일정 생성
+                    </a>
+                    <a href="{% url 'wbs:event_range_selector' %}" class="btn btn-secondary">
+                        <i class="fas fa-calendar-range"></i>
+                        범위 일정 생성
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- 필터 -->
+            <form method="get" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label style="color: var(--text-heading); font-weight: 500;">유형:</label>
+                    <select name="type" style="padding: 0.375rem 0.75rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
+                        <option value="">전체</option>
+                        {% for value, label in event_types %}
+                            <option value="{{ value }}" {% if current_filters.type == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label style="color: var(--text-heading); font-weight: 500;">우선순위:</label>
+                    <select name="priority" style="padding: 0.375rem 0.75rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
+                        <option value="">전체</option>
+                        {% for value, label in priority_levels %}
+                            <option value="{{ value }}" {% if current_filters.priority == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label style="color: var(--text-heading); font-weight: 500;">기간:</label>
+                    <select name="date" style="padding: 0.375rem 0.75rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
+                        <option value="">전체</option>
+                        <option value="today" {% if current_filters.date == 'today' %}selected{% endif %}>오늘</option>
+                        <option value="week" {% if current_filters.date == 'week' %}selected{% endif %}>이번 주</option>
+                        <option value="month" {% if current_filters.date == 'month' %}selected{% endif %}>이번 달</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-filter"></i>
+                    필터 적용
+                </button>
+                
+                <a href="{% url 'wbs:event_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-times"></i>
+                    초기화
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <!-- 일정 목록 -->
+    {% if events %}
+        <div class="card">
+            <div class="card-body">
+                <div style="display: grid; gap: 1rem;">
+                    {% for event in events %}
+                        <div class="card" style="border-left: 4px solid {{ event.priority_color }}; transition: all 0.2s ease;">
+                            <div class="card-body">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div style="flex: 1;">
+                                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                            <i class="{{ event.type_icon }}" style="color: {{ event.priority_color }}; font-size: 1.125rem;"></i>
+                                            <h4 style="margin: 0; color: var(--text-heading);">
+                                                <a href="{% url 'wbs:event_detail' event.pk %}" style="color: inherit; text-decoration: none;">
+                                                    {{ event.title }}
+                                                </a>
+                                            </h4>
+                                            {% if event.is_completed %}
+                                                <span style="background: #10B981; color: white; padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500;">
+                                                    <i class="fas fa-check"></i> 완료
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        {% if event.description %}
+                                            <p style="margin: 0 0 0.75rem 0; color: var(--text-body); font-size: 0.875rem;">
+                                                {{ event.description|truncatechars:150 }}
+                                            </p>
+                                        {% endif %}
+                                        
+                                        <div style="display: flex; gap: 1.5rem; font-size: 0.875rem; color: var(--text-secondary); flex-wrap: wrap;">
+                                            <span>
+                                                <i class="fas fa-calendar-alt" style="margin-right: 0.25rem;"></i>
+                                                {{ event.start_date|date:"Y-m-d" }}
+                                                {% if event.start_time %}
+                                                    {{ event.start_time|time:"H:i" }}
+                                                {% endif %}
+                                            </span>
+                                            
+                                            {% if event.end_date != event.start_date %}
+                                                <span>
+                                                    <i class="fas fa-calendar-check" style="margin-right: 0.25rem;"></i>
+                                                    {{ event.end_date|date:"Y-m-d" }}
+                                                    {% if event.end_time %}
+                                                        {{ event.end_time|time:"H:i" }}
+                                                    {% endif %}
+                                                </span>
+                                            {% endif %}
+                                            
+                                            {% if event.location %}
+                                                <span>
+                                                    <i class="fas fa-map-marker-alt" style="margin-right: 0.25rem;"></i>
+                                                    {{ event.location }}
+                                                </span>
+                                            {% endif %}
+                                            
+                                            {% if event.related_project %}
+                                                <span>
+                                                    <i class="fas fa-project-diagram" style="margin-right: 0.25rem;"></i>
+                                                    <a href="{% url 'wbs:project_detail' event.related_project.pk %}" style="color: var(--btn-primary-bg); text-decoration: none;">
+                                                        {{ event.related_project.title }}
+                                                    </a>
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        {% if event.attendees.exists %}
+                                            <div style="margin-top: 0.75rem;">
+                                                <span style="color: var(--text-secondary); font-size: 0.875rem; margin-right: 0.5rem;">
+                                                    <i class="fas fa-users" style="margin-right: 0.25rem;"></i>
+                                                    참석자:
+                                                </span>
+                                                {% for attendee in event.attendees.all %}
+                                                    <span style="background: var(--sidebar-hover); padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.75rem; margin-right: 0.25rem;">
+                                                        {{ attendee.username }}
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                        <button onclick="toggleEventComplete({{ event.pk }})" 
+                                                style="padding: 0.375rem 0.75rem; background: {% if event.is_completed %}#6c757d{% else %}#10B981{% endif %}; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; transition: all 0.2s ease;"
+                                                title="{% if event.is_completed %}완료 취소{% else %}완료 표시{% endif %}">
+                                            <i class="fas fa-{% if event.is_completed %}undo{% else %}check{% endif %}"></i>
+                                        </button>
+                                        
+                                        {% if event.creator == user %}
+                                            <a href="{% url 'wbs:event_edit' event.pk %}" 
+                                               style="padding: 0.375rem 0.75rem; background: var(--btn-primary-bg); color: white; text-decoration: none; border-radius: 4px; font-size: 0.75rem; transition: all 0.2s ease;"
+                                               title="편집">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            
+                                            <a href="{% url 'wbs:event_delete' event.pk %}" 
+                                               style="padding: 0.375rem 0.75rem; background: #dc3545; color: white; text-decoration: none; border-radius: 4px; font-size: 0.75rem; transition: all 0.2s ease;"
+                                               title="삭제"
+                                               onclick="return confirm('정말로 이 일정을 삭제하시겠습니까?')">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="card">
+            <div class="card-body">
+                <div style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);">
+                    <i class="fas fa-calendar-times" style="font-size: 3rem; margin-bottom: 1rem; color: var(--text-disabled);"></i>
+                    <h3 style="margin: 0 0 0.5rem 0; color: var(--text-heading);">일정이 없습니다</h3>
+                    <p style="margin: 0 0 1.5rem 0;">새로운 일정을 생성해보세요</p>
+                    <a href="{% url 'wbs:event_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        새 일정 생성
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleEventComplete(eventId) {
+    fetch(`/events/${eventId}/toggle-complete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload(); // 페이지 새로고침으로 상태 반영
+        } else {
+            alert('일정 상태 변경에 실패했습니다.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('일정 상태 변경 중 오류가 발생했습니다.');
+    });
+}
+</script>
+{% endblock %}

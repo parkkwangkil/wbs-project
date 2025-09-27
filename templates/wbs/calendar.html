@@ -1,0 +1,733 @@
+{% extends 'base.html' %}
+
+{% block title %}프로젝트 캘린더 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}프로젝트 캘린더{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+    <div class="card">
+        <div class="card-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 class="card-title">
+                    <i class="fas fa-calendar-alt" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                    {{ month_name }} {{ year }}
+                </h2>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <a href="{% url 'wbs:calendar' %}?year={{ prev_year }}&month={{ prev_month }}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-chevron-left"></i>
+                        이전 달
+                    </a>
+                    <a href="{% url 'wbs:calendar' %}?year={{ next_year }}&month={{ next_month }}" class="btn btn-secondary btn-sm">
+                        다음 달
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                    <a href="{% url 'wbs:event_range_selector' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-calendar-range"></i>
+                        범위 일정
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- 캘린더 테이블 -->
+            <style>
+                .calendar-badge {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 0.35rem;
+                    padding: 0.35rem 0.5rem;
+                    border-radius: 4px;
+                    font-size: 0.75rem;
+                    color: #fff;
+                    text-decoration: none;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .calendar-badge .icon {
+                    font-size: 0.75rem;
+                    opacity: 0.9;
+                }
+                /* Figma-like modal styles */
+                .ds-overlay { position: fixed; inset: 0; background: rgba(10,15,25,0.5); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index: 1000; display: none; }
+                .ds-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); width: min(680px, 92vw); max-height: 90vh; overflow-y: auto; padding: 24px; }
+                .ds-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+                .ds-modal-title { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--text-heading); font-size: 18px; margin: 0; }
+                .ds-close { background: transparent; border: 0; color: var(--text-secondary); font-size: 20px; cursor: pointer; }
+                .ds-field { display: grid; gap: 6px; }
+                .ds-label { color: var(--text-heading); font-size: 13px; font-weight: 600; }
+                .ds-input, .ds-select, .ds-textarea, .ds-date, .ds-time { width: 100%; border: 1px solid var(--card-border); background: var(--bg-surface); color: var(--text-body); border-radius: 12px; padding: 10px 12px; }
+                .ds-textarea { resize: vertical; min-height: 80px; }
+                .ds-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+                .ds-actions { display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid var(--card-border); padding-top: 16px; margin-top: 8px; }
+                .btn-primary { background: var(--btn-primary-bg); color: #fff; border: 0; padding: 10px 14px; border-radius: 10px; cursor: pointer; }
+                .btn-primary:hover { filter: brightness(0.95); }
+                .btn-secondary { background: var(--sidebar-hover); color: var(--text-heading); border: 0; padding: 10px 14px; border-radius: 10px; cursor: pointer; }
+                .calendar-badge .range-label {
+                    font-size: 0.7rem;
+                    font-weight: 500;
+                    opacity: 0.9;
+                }
+                .calendar-badge.middle,
+                .calendar-badge.end {
+                    font-size: 0.65rem;
+                    justify-content: flex-start;
+                    padding: 0.25rem 0.4rem;
+                    opacity: 0.85;
+                }
+                .calendar-badge.project {
+                    background: var(--btn-primary-bg);
+                }
+                .calendar-badge.project.middle,
+                .calendar-badge.project.end {
+                    background: rgba(59, 130, 246, 0.12);
+                    color: var(--btn-primary-bg);
+                    border: 1px dashed var(--btn-primary-bg);
+                }
+                .calendar-badge.event {
+                    border: 1px solid transparent;
+                }
+                .calendar-badge.event.middle,
+                .calendar-badge.event.end {
+                    background: rgba(255, 255, 255, 0.12);
+                    color: inherit;
+                    border-color: currentColor;
+                }
+            </style>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;">
+                    <thead>
+                        <tr style="background: var(--sidebar-hover);">
+                            <th style="padding: 0.75rem; text-align: center; border: 1px solid var(--card-border); color: var(--text-heading);">일</th>
+                            <th style="padding: 0.75rem; text-align: center; border: 1px solid var(--card-border); color: var(--text-heading);">월</th>
+                            <th style="padding: 0.75rem; text-align: center; border: 1px solid var(--card-border); color: var(--text-heading);">화</th>
+                            <th style="padding: 0.75rem; text-align: center; border: 1px solid var(--card-border); color: var(--text-heading);">수</th>
+                            <th style="padding: 0.75rem; text-align: center; border: 1px solid var(--card-border); color: var(--text-heading);">목</th>
+                            <th style="padding: 0.75rem; text-align: center; border: 1px solid var(--card-border); color: var(--text-heading);">금</th>
+                            <th style="padding: 0.75rem; text-align: center; border: 1px solid var(--card-border); color: var(--text-heading);">토</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for week in calendar_weeks %}
+                            <tr>
+                                {% for day in week %}
+                                    <td style="padding: 0.5rem; border: 1px solid var(--card-border); vertical-align: top; height: 120px; width: 14.28%;">
+                                        {% if day %}
+                                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                                                <span style="font-weight: 600; color: var(--text-heading);">{{ day.day }}</span>
+                                                {% if day.is_today %}
+                                                    <span style="background: var(--btn-primary-bg); color: white; padding: 0.125rem 0.375rem; border-radius: 4px; font-size: 0.75rem;">오늘</span>
+                                                {% endif %}
+                                            </div>
+
+                                            {% if show_projects %}
+                                            {% for project in day.projects %}
+                                            <div style="margin-bottom: 0.25rem;">
+                                                {% if project.start_date == day.date %}
+                                                    <a href="{% url 'wbs:project_detail' project.pk %}"
+                                                       class="calendar-badge project"
+                                                       title="{{ project.title }}"
+                                                       style="background: {{ project.theme_color }}; color: {{ project.contrast_text_color }};">
+                                                        <span><i class="fas fa-project-diagram icon"></i> {{ project.title|truncatechars:12 }}</span>
+                                                        {% if project.end_date > day.date %}
+                                                            <span class="range-label">→ {{ project.end_date|date:"m/d" }}</span>
+                                                        {% endif %}
+                                                    </a>
+                                                {% elif project.end_date == day.date %}
+                                                    <a href="{% url 'wbs:project_detail' project.pk %}"
+                                                       class="calendar-badge project end"
+                                                       title="{{ project.title }} 종료"
+                                                       style="background: {{ project.theme_color }}; color: {{ project.contrast_text_color }};">
+                                                        <span><i class="fas fa-project-diagram icon"></i> {{ project.title|truncatechars:12 }}</span>
+                                                        <span class="range-label"><i class="fas fa-flag-checkered icon"></i></span>
+                                                    </a>
+                                                {% else %}
+                                                    <a href="{% url 'wbs:project_detail' project.pk %}"
+                                                       class="calendar-badge project middle"
+                                                       title="{{ project.title }}"
+                                                       style="background: {{ project.theme_color }}; color: {{ project.contrast_text_color }}; opacity: 0.9;">
+                                                        <span><i class="fas fa-project-diagram icon"></i> {{ project.title|truncatechars:12 }}</span>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                            {% endfor %}
+                                            {% endif %}
+
+                                            {% if show_events %}
+                                            {% for event in day.events %}
+                                            <div style="margin-bottom: 0.25rem;">
+                                                {% if event.start_date == day.date %}
+                                                    <a href="{% url 'wbs:event_detail' event.pk %}"
+                                                       class="calendar-badge event"
+                                                       style="background: {{ event.priority_color }}; border-color: {{ event.priority_color }};"
+                                                       title="{{ event.title }} ({{ event.get_event_type_display }})">
+                                                        <span><i class="{{ event.type_icon }} icon"></i> {{ event.title|truncatechars:12 }}</span>
+                                                        {% if event.end_date > day.date %}
+                                                            <span class="range-label">→ {{ event.end_date|date:"m/d" }}</span>
+                                                        {% endif %}
+                                                    </a>
+                                                {% elif event.end_date == day.date %}
+                                                    <span class="calendar-badge event end"
+                                                          style="color: {{ event.priority_color }}; border-color: {{ event.priority_color }};"
+                                                          title="{{ event.title }} 종료">
+                                                        <i class="fas fa-flag-checkered icon"></i>
+                                                        종료
+                                                    </span>
+                                                {% else %}
+                                                    <div style="height: 4px; border-radius: 2px; background: {{ event.priority_color }}; opacity: 0.5;"></div>
+                                                {% endif %}
+                                            </div>
+                                            {% endfor %}
+                                            {% endif %}
+
+                                            <div style="margin-top: 0.25rem; display: flex; gap: 0.125rem;">
+                                                <button onclick="quickAddEvent('{{ day.date|date:"Y-m-d" }}')"
+                                                        style="flex: 1; padding: 0.125rem; background: transparent; border: 1px dashed #ccc; color: #666; font-size: 0.625rem; border-radius: 3px; cursor: pointer; transition: all 0.2s ease;"
+                                                        onmouseover="this.style.background='#f0f0f0'; this.style.borderColor='#999';"
+                                                        onmouseout="this.style.background='transparent'; this.style.borderColor='#ccc';">
+                                                    <i class="fas fa-plus" style="margin-right: 0.125rem;"></i>
+                                                    빠른 추가
+                                                </button>
+                                                <button onclick="advancedAddEvent('{{ day.date|date:"Y-m-d" }}')"
+                                                        style="flex: 1; padding: 0.125rem; background: transparent; border: 1px dashed #3B82F6; color: #3B82F6; font-size: 0.625rem; border-radius: 3px; cursor: pointer; transition: all 0.2s ease;"
+                                                        onmouseover="this.style.background='#EBF8FF'; this.style.borderColor='#1D4ED8';"
+                                                        onmouseout="this.style.background='transparent'; this.style.borderColor='#3B82F6';">
+                                                    <i class="fas fa-calendar-plus" style="margin-right: 0.125rem;"></i>
+                                                    고급 추가
+                                                </button>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                            {% with week_index=forloop.counter0 %}
+                            {% if show_bars and week_bars and week_bars|length > week_index %}
+                            {% with wb=week_bars|slice:week_index|last %}
+                            {% if wb.project_lanes %}
+                            {% for lane in wb.project_lanes %}
+                            <tr>
+                                {% for seg in lane %}
+                                    {% if seg.type == 'empty' %}
+                                        <td colspan="{{ seg.colspan }}" style="border: 0; padding: 0.15rem 0.2rem;">&nbsp;</td>
+                                    {% else %}
+                                        <td colspan="{{ seg.colspan }}" style="border: 0; padding: 0.15rem 0.2rem;">
+                                            <a href="{{ seg.url }}" style="display: block; background: #3B82F6; color: #fff; border-radius: 6px; padding: 0.25rem 0.4rem; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                <i class="fas fa-project-diagram" style="margin-right: 0.25rem;"></i>{{ seg.label }}
+                                            </a>
+                                        </td>
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                            {% endif %}
+
+                            {% if wb.event_lanes %}
+                            {% for lane in wb.event_lanes %}
+                            <tr>
+                                {% for seg in lane %}
+                                    {% if seg.type == 'empty' %}
+                                        <td colspan="{{ seg.colspan }}" style="border: 0; padding: 0.15rem 0.2rem;">&nbsp;</td>
+                                    {% else %}
+                                        <td colspan="{{ seg.colspan }}" style="border: 0; padding: 0.15rem 0.2rem;">
+                                            <a href="{{ seg.url }}" style="display: block; background: {{ seg.color }}; color: #fff; border-radius: 6px; padding: 0.25rem 0.4rem; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                <i class="fas fa-long-arrow-alt-right" style="margin-right: 0.25rem;"></i>{{ seg.label }}
+                                            </a>
+                                        </td>
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                            {% endif %}
+                            {% endwith %}
+                            {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 프로젝트 목록 -->
+            {% if projects %}
+                <div style="margin-top: 2rem;">
+                    <h3 style="color: var(--text-heading); margin-bottom: 1rem;">
+                        <i class="fas fa-list" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        {{ month_name }} 프로젝트 목록
+                    </h3>
+                    <div style="display: grid; gap: 1rem;">
+                        {% for project in projects %}
+                            <div style="padding: 1rem; border: 1px solid var(--card-border); border-radius: 8px; background: var(--bg-surface);">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div style="flex: 1;">
+                                        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-heading);">
+                                            <a href="{% url 'wbs:project_detail' project.pk %}" style="color: var(--btn-primary-bg); text-decoration: none;">
+                                                {{ project.title }}
+                                            </a>
+                                        </h4>
+                                        <p style="margin: 0 0 0.5rem 0; color: var(--text-body); font-size: 0.875rem;">
+                                            {{ project.description|truncatechars:100 }}
+                                        </p>
+                                        <div style="display: flex; gap: 1rem; font-size: 0.875rem; color: var(--text-secondary);">
+                                            <span><i class="fas fa-calendar-alt" style="margin-right: 0.25rem;"></i>{{ project.start_date|date:"Y-m-d" }}</span>
+                                            <span><i class="fas fa-calendar-check" style="margin-right: 0.25rem;"></i>{{ project.end_date|date:"Y-m-d" }}</span>
+                                            <span><i class="fas fa-user" style="margin-right: 0.25rem;"></i>{{ project.manager.username }}</span>
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <span style="display: inline-block; padding: 0.25rem 0.5rem; background: var(--sidebar-hover); color: var(--text-heading); border-radius: 4px; font-size: 0.875rem;">
+                                            {{ project.get_status_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 2rem 1rem; color: var(--text-secondary);">
+                    <i class="fas fa-calendar-times" style="font-size: 2rem; margin-bottom: 1rem; color: var(--text-disabled);"></i>
+                    <p style="font-size: 1.125rem; margin-bottom: 0.5rem;">{{ month_name }}에 예정된 프로젝트가 없습니다</p>
+                    <p style="margin-bottom: 1.5rem;">새 프로젝트를 생성해보세요</p>
+                    <a href="{% url 'wbs:project_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        새 프로젝트 생성
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 고급 일정 추가 모달 (Figma-like) -->
+<div id="advancedEventModal" class="ds-overlay">
+    <div class="ds-modal">
+        <div class="ds-modal-header">
+            <h3 class="ds-modal-title"><i class="fas fa-calendar-plus"></i> 고급 일정 생성</h3>
+            <button class="ds-close" onclick="closeAdvancedEventModal()"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <form id="advancedEventForm">
+            {% csrf_token %}
+            <input type="hidden" id="selectedStartDate" name="start_date">
+            <input type="hidden" id="selectedEndDate" name="end_date">
+            
+            <!-- 기본 정보 -->
+            <div style="margin-bottom: 1.5rem;">
+                <h4 class="ds-modal-title" style="font-size:16px;"><i class="fas fa-info-circle"></i> 기본 정보</h4>
+                <div style="display: grid; gap: 12px;">
+                    <div class="ds-field">
+                        <label class="ds-label">제목 <span style="color:#ef4444;">*</span></label>
+                        <input type="text" name="title" id="advancedEventTitle" required class="ds-input" placeholder="일정 제목을 입력하세요">
+                    </div>
+                    <div class="ds-field">
+                        <label class="ds-label">설명</label>
+                        <textarea name="description" id="advancedEventDescription" class="ds-textarea" placeholder="일정에 대한 설명을 입력하세요"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 날짜 범위 선택 -->
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-calendar-alt"></i>
+                    날짜 범위
+                </h4>
+                
+                <div class="ds-grid-2" style="align-items: end; margin-bottom: 12px;">
+                    <div class="ds-field">
+                        <label class="ds-label">시작일</label>
+                        <input type="date" id="modalStartDate" class="ds-date">
+                    </div>
+                    <div class="ds-field">
+                        <label class="ds-label">종료일</label>
+                        <input type="date" id="modalEndDate" class="ds-date">
+                    </div>
+                </div>
+                <button type="button" onclick="updateModalDateRange()" class="btn-secondary"><i class="fas fa-sync"></i> 업데이트</button>
+                
+                <!-- 선택된 날짜 범위 표시 -->
+                <div id="modalSelectedRange" style="background: var(--sidebar-hover); padding: 1rem; border-radius: 8px; display: none;">
+                    <div id="modalRangeInfo" style="color: var(--text-body);"></div>
+                </div>
+            </div>
+            
+            <!-- 일정 설정 -->
+            <div style="margin-bottom: 1.5rem;">
+                <h4 class="ds-modal-title" style="font-size:16px;"><i class="fas fa-cog"></i> 일정 설정</h4>
+                <div class="ds-grid-2" style="margin-bottom: 12px;">
+                    <div class="ds-field">
+                        <label class="ds-label">유형</label>
+                        <select name="event_type" id="advancedEventType" class="ds-select">
+                            <option value="personal">개인 일정</option>
+                            <option value="meeting">회의</option>
+                            <option value="deadline">마감일</option>
+                            <option value="reminder">알림</option>
+                            <option value="holiday">휴일</option>
+                            <option value="other">기타</option>
+                        </select>
+                    </div>
+                    <div class="ds-field">
+                        <label class="ds-label">우선순위</label>
+                        <select name="priority" id="advancedEventPriority" class="ds-select">
+                            <option value="low">낮음</option>
+                            <option value="medium" selected>보통</option>
+                            <option value="high">높음</option>
+                            <option value="urgent">긴급</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                            시작 시간
+                        </label>
+                        <input type="time" name="start_time" id="advancedStartTime" 
+                               style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                            종료 시간
+                        </label>
+                        <input type="time" name="end_time" id="advancedEndTime" 
+                               style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--sidebar-hover); border-radius: 8px; margin-bottom: 1rem;">
+                    <input type="checkbox" name="is_all_day" id="advancedIsAllDay" style="transform: scale(1.2);">
+                    <label for="advancedIsAllDay" style="color: var(--text-heading); font-weight: 500; cursor: pointer;">
+                        하루 종일
+                    </label>
+                </div>
+            </div>
+            
+            <!-- 관련 프로젝트 -->
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-project-diagram"></i>
+                    관련 프로젝트
+                </h4>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                        프로젝트 선택
+                    </label>
+                    <select name="related_project" id="advancedRelatedProject" 
+                            style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
+                        <option value="">프로젝트를 선택하세요</option>
+                        {% for project in user_projects %}
+                            <option value="{{ project.pk }}">{{ project.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+                   <!-- 위치 및 링크 -->
+                   <div style="margin-bottom: 1.5rem;">
+                       <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                           <i class="fas fa-map-marker-alt"></i>
+                           위치 및 링크
+                       </h4>
+                       
+                       <div style="display: grid; gap: 1rem;">
+                           <div>
+                               <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                   장소
+                               </label>
+                               <input type="text" name="location" id="advancedLocation" 
+                                      style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);"
+                                      placeholder="장소를 입력하세요">
+                           </div>
+                           
+                           <div>
+                               <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                   회의 링크
+                               </label>
+                               <input type="url" name="meeting_link" id="advancedMeetingLink" 
+                                      style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);"
+                                      placeholder="회의 링크를 입력하세요">
+                           </div>
+                           
+                           <div>
+                               <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                   알림 시간 (분)
+                               </label>
+                               <input type="number" name="reminder_minutes" id="advancedReminderMinutes" 
+                                      value="15" min="0" max="1440"
+                                      style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);"
+                                      placeholder="알림 시간을 입력하세요">
+                           </div>
+                       </div>
+                   </div>
+                   
+                   <!-- 추가 설정 -->
+                   <div style="margin-bottom: 1.5rem;">
+                       <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                           <i class="fas fa-cog"></i>
+                           추가 설정
+                       </h4>
+                       
+                       <div style="display: flex; flex-direction: column; gap: 1rem;">
+                           <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--sidebar-hover); border-radius: 8px;">
+                               <input type="checkbox" name="is_recurring" id="advancedIsRecurring" style="transform: scale(1.2);">
+                               <label for="advancedIsRecurring" style="color: var(--text-heading); font-weight: 500; cursor: pointer;">
+                                   반복 일정
+                               </label>
+                           </div>
+                           
+                           <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--sidebar-hover); border-radius: 8px;">
+                               <input type="checkbox" name="is_private" id="advancedIsPrivate" style="transform: scale(1.2);">
+                               <label for="advancedIsPrivate" style="color: var(--text-heading); font-weight: 500; cursor: pointer;">
+                                   비공개 일정
+                               </label>
+                           </div>
+                       </div>
+                   </div>
+            
+            <!-- 제출 버튼 -->
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; border-top: 1px solid var(--card-border); padding-top: 1.5rem;">
+                <button type="button" onclick="closeAdvancedEventModal()" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    취소
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    일정 생성
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 빠른 일정 추가 모달 (기존 기능) -->
+<div id="quickEventModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); min-width: 400px;">
+        <h3 style="margin: 0 0 1rem 0; color: var(--text-heading);">빠른 일정 추가</h3>
+        <form id="quickEventForm">
+            {% csrf_token %}
+            <input type="hidden" id="selectedDate" name="start_date">
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading);">제목</label>
+                <input type="text" name="title" id="eventTitle" required 
+                       style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;"
+                       placeholder="일정 제목을 입력하세요">
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading);">유형</label>
+                <select name="event_type" id="eventType" 
+                        style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="personal">개인 일정</option>
+                    <option value="meeting">회의</option>
+                    <option value="deadline">마감일</option>
+                    <option value="reminder">알림</option>
+                    <option value="holiday">휴일</option>
+                    <option value="other">기타</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button type="button" onclick="closeQuickEventModal()" 
+                        style="padding: 0.5rem 1rem; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    취소
+                </button>
+                <button type="submit" 
+                        style="padding: 0.5rem 1rem; background: var(--btn-primary-bg); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    추가
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// 빠른 일정 추가 (기존 기능)
+function quickAddEvent(dateStr) {
+    document.getElementById('selectedDate').value = dateStr;
+    document.getElementById('eventTitle').value = '';
+    document.getElementById('eventType').value = 'personal';
+    document.getElementById('quickEventModal').style.display = 'block';
+}
+
+function closeQuickEventModal() {
+    document.getElementById('quickEventModal').style.display = 'none';
+}
+
+// 고급 일정 추가 (새로운 기능)
+function advancedAddEvent(dateStr) {
+    // 시작일을 선택된 날짜로 설정
+    document.getElementById('modalStartDate').value = dateStr;
+    document.getElementById('modalEndDate').value = dateStr;
+    
+    // 폼 초기화
+    document.getElementById('advancedEventForm').reset();
+    document.getElementById('modalStartDate').value = dateStr;
+    document.getElementById('modalEndDate').value = dateStr;
+    
+    // 모달 표시
+    document.getElementById('advancedEventModal').style.display = 'block';
+    
+    // 날짜 범위 업데이트
+    updateModalDateRange();
+}
+
+function closeAdvancedEventModal() {
+    document.getElementById('advancedEventModal').style.display = 'none';
+}
+
+// 모달 내 날짜 범위 업데이트
+function updateModalDateRange() {
+    const startDate = document.getElementById('modalStartDate').value;
+    const endDate = document.getElementById('modalEndDate').value;
+    
+    if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        if (start <= end) {
+            // 선택된 범위 표시
+            const rangeInfo = document.getElementById('modalRangeInfo');
+            const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+            
+            rangeInfo.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar-alt" style="color: var(--btn-primary-bg);"></i>
+                    <span><strong>${formatModalDate(start)}</strong> ~ <strong>${formatModalDate(end)}</strong></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <i class="fas fa-clock" style="color: var(--text-secondary);"></i>
+                    <span>총 <strong>${daysDiff}일</strong>간의 일정</span>
+                </div>
+            `;
+            
+            document.getElementById('modalSelectedRange').style.display = 'block';
+            
+            // 폼에 날짜 설정
+            document.getElementById('selectedStartDate').value = startDate;
+            document.getElementById('selectedEndDate').value = endDate;
+        } else {
+            alert('종료일은 시작일보다 늦어야 합니다.');
+        }
+    }
+}
+
+function formatModalDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+    const weekday = weekdays[date.getDay()];
+    
+    return `${year}년 ${month}월 ${day}일 (${weekday})`;
+}
+
+// 빠른 일정 추가 폼 제출 처리
+document.getElementById('quickEventForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch('{% url "wbs:event_quick_create" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('Quick Event Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Quick Event Response data:', data);
+        if (data.success) {
+            closeQuickEventModal();
+            location.reload(); // 페이지 새로고침으로 새 일정 표시
+        } else {
+            alert('일정 추가에 실패했습니다: ' + (data.error || '알 수 없는 오류'));
+        }
+    })
+    .catch(error => {
+        console.error('Quick Event Error:', error);
+        alert('일정 추가 중 오류가 발생했습니다: ' + error.message);
+    });
+});
+
+// 모달 외부 클릭 시 닫기
+document.getElementById('quickEventModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeQuickEventModal();
+    }
+});
+
+// 고급 일정 생성 폼 제출 처리
+document.getElementById('advancedEventForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch('{% url "wbs:event_create" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('Advanced Event Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        if (response.redirected) {
+            window.location.href = response.url;
+            return;
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Advanced Event Response data:', data);
+        if (data && data.success) {
+            closeAdvancedEventModal();
+            location.reload(); // 페이지 새로고침으로 새 일정 표시
+        } else {
+            let errorMessage = '일정 생성에 실패했습니다: ' + (data.error || '알 수 없는 오류');
+            if (data.errors) {
+                errorMessage += '\n\n상세 오류:\n';
+                for (const [field, errors] of Object.entries(data.errors)) {
+                    errorMessage += `${field}: ${errors.join(', ')}\n`;
+                }
+            }
+            alert(errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Advanced Event Error:', error);
+        alert('일정 생성 중 오류가 발생했습니다: ' + error.message);
+    });
+});
+
+// 고급 모달 외부 클릭 시 닫기
+document.getElementById('advancedEventModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeAdvancedEventModal();
+    }
+});
+
+// 하루 종일 체크박스 토글 (고급 모달)
+document.getElementById('advancedIsAllDay').addEventListener('change', function() {
+    const timeFields = document.querySelectorAll('#advancedStartTime, #advancedEndTime');
+    timeFields.forEach(field => {
+        field.disabled = this.checked;
+        if (this.checked) {
+            field.value = '';
+        }
+    });
+});
+</script>
+{% endblock %}

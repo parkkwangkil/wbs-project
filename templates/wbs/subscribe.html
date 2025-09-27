@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ plan.display_name }} 구독 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}{{ plan.display_name }} 구독{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-credit-card" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                {{ plan.display_name }} 구독
+            </h2>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <!-- 플랜 정보 -->
+                <div>
+                    <h3 style="color: var(--text-heading); margin-bottom: 1rem;">선택한 플랜</h3>
+                    <div style="border: 1px solid var(--card-border); border-radius: 8px; padding: 1.5rem; background: var(--sidebar-hover);">
+                        <h4 style="color: var(--text-heading); margin-bottom: 0.5rem;">{{ plan.display_name }}</h4>
+                        <div style="margin-bottom: 1rem;">
+                            <span style="font-size: 1.5rem; font-weight: 700; color: var(--btn-primary-bg);">{{ plan.price|floatformat:0 }}</span>
+                            <span style="color: var(--text-secondary); margin-left: 0.25rem;">{{ plan.currency }}</span>
+                            <span style="color: var(--text-secondary); font-size: 0.875rem; margin-left: 0.5rem;">
+                                {% if plan.billing_cycle == 'monthly' %}월간{% else %}연간{% endif %}
+                            </span>
+                        </div>
+                        
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li style="display: flex; align-items: center; margin-bottom: 0.5rem; color: var(--text-body);">
+                                <i class="fas fa-check" style="color: #10B981; margin-right: 0.5rem; width: 16px;"></i>
+                                프로젝트 {{ plan.max_projects }}개
+                            </li>
+                            <li style="display: flex; align-items: center; margin-bottom: 0.5rem; color: var(--text-body);">
+                                <i class="fas fa-check" style="color: #10B981; margin-right: 0.5rem; width: 16px;"></i>
+                                팀원 {{ plan.max_team_members }}명
+                            </li>
+                            <li style="display: flex; align-items: center; margin-bottom: 0.5rem; color: var(--text-body);">
+                                <i class="fas fa-check" style="color: #10B981; margin-right: 0.5rem; width: 16px;"></i>
+                                저장공간 {{ plan.max_storage_gb }}GB
+                            </li>
+                            {% if plan.has_priority_support %}
+                                <li style="display: flex; align-items: center; margin-bottom: 0.5rem; color: var(--text-body);">
+                                    <i class="fas fa-check" style="color: #10B981; margin-right: 0.5rem; width: 16px;"></i>
+                                    우선 지원
+                                </li>
+                            {% endif %}
+                            {% if plan.has_advanced_analytics %}
+                                <li style="display: flex; align-items: center; margin-bottom: 0.5rem; color: var(--text-body);">
+                                    <i class="fas fa-check" style="color: #10B981; margin-right: 0.5rem; width: 16px;"></i>
+                                    고급 분석
+                                </li>
+                            {% endif %}
+                            {% if plan.has_api_access %}
+                                <li style="display: flex; align-items: center; margin-bottom: 0.5rem; color: var(--text-body);">
+                                    <i class="fas fa-check" style="color: #10B981; margin-right: 0.5rem; width: 16px;"></i>
+                                    API 접근
+                                </li>
+                            {% endif %}
+                            {% if plan.has_custom_branding %}
+                                <li style="display: flex; align-items: center; margin-bottom: 0.5rem; color: var(--text-body);">
+                                    <i class="fas fa-check" style="color: #10B981; margin-right: 0.5rem; width: 16px;"></i>
+                                    커스텀 브랜딩
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 결제 정보 -->
+                <div>
+                    <h3 style="color: var(--text-heading); margin-bottom: 1rem;">결제 정보</h3>
+                    
+                    {% if plan.price == 0 %}
+                        <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                            <div style="display: flex; align-items: center; color: #166534;">
+                                <i class="fas fa-gift" style="margin-right: 0.5rem;"></i>
+                                <span style="font-weight: 600;">무료 플랜</span>
+                            </div>
+                            <p style="color: #166534; margin: 0.5rem 0 0 0; font-size: 0.875rem;">
+                                무료 플랜은 결제 없이 바로 시작할 수 있습니다.
+                            </p>
+                        </div>
+                    {% else %}
+                        <div style="background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                            <div style="display: flex; align-items: center; color: #92400E;">
+                                <i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>
+                                <span style="font-weight: 600;">데모 모드</span>
+                            </div>
+                            <p style="color: #92400E; margin: 0.5rem 0 0 0; font-size: 0.875rem;">
+                                실제 결제는 처리되지 않습니다. 데모용으로만 사용됩니다.
+                            </p>
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if plan.price > 0 %}
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: block; color: var(--text-heading); margin-bottom: 0.5rem; font-weight: 600;">결제 방법</label>
+                                <select name="payment_method" class="form-control" required>
+                                    <option value="card">신용카드</option>
+                                    <option value="bank">계좌이체</option>
+                                    <option value="paypal">PayPal</option>
+                                    <option value="apple">Apple Pay</option>
+                                    <option value="google">Google Pay</option>
+                                </select>
+                            </div>
+                        {% endif %}
+                        
+                        <div style="background: var(--sidebar-hover); border: 1px solid var(--card-border); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                            <h4 style="color: var(--text-heading); margin-bottom: 0.5rem;">결제 요약</h4>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span style="color: var(--text-body);">{{ plan.display_name }}</span>
+                                <span style="color: var(--text-heading); font-weight: 600;">{{ plan.price|floatformat:0 }} {{ plan.currency }}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span style="color: var(--text-body);">결제 주기</span>
+                                <span style="color: var(--text-heading);">
+                                    {% if plan.billing_cycle == 'monthly' %}월간{% else %}연간{% endif %}
+                                </span>
+                            </div>
+                            <hr style="border: none; border-top: 1px solid var(--card-border); margin: 0.5rem 0;">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-heading); font-weight: 700;">총 금액</span>
+                                <span style="color: var(--btn-primary-bg); font-weight: 700; font-size: 1.125rem;">{{ plan.price|floatformat:0 }} {{ plan.currency }}</span>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 1rem;">
+                            <a href="{% url 'wbs:subscription_plans' %}" class="btn btn-secondary" style="flex: 1;">
+                                <i class="fas fa-arrow-left"></i>
+                                뒤로가기
+                            </a>
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                <i class="fas fa-credit-card"></i>
+                                {% if plan.price == 0 %}무료 시작{% else %}구독하기{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

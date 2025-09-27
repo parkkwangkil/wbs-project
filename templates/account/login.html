@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}로그인 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}로그인{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+    <div class="card" style="max-width: 400px; margin: 0 auto;">
+        <div class="card-header">
+            <h2 class="card-title" style="text-align: center;">
+                <i class="fas fa-sign-in-alt" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                로그인
+            </h2>
+        </div>
+        <div class="card-body">
+            <!-- Google 소셜 로그인 -->
+            <div style="margin-bottom: 2rem;">
+                <a href="{% url 'google_login' %}" class="btn btn-primary" style="width: 100%; justify-content: center; margin-bottom: 1rem;">
+                    <i class="fab fa-google" style="margin-right: 0.5rem;"></i>
+                    Google로 로그인
+                </a>
+            </div>
+
+            <!-- 구분선 -->
+            <div style="text-align: center; margin: 1.5rem 0; position: relative;">
+                <hr style="border: none; border-top: 1px solid var(--card-border);">
+                <span style="background: var(--card-surface); padding: 0 1rem; color: var(--text-secondary); font-size: 0.875rem; position: absolute; top: -0.5rem; left: 50%; transform: translateX(-50%);">
+                    또는
+                </span>
+            </div>
+
+            <!-- 일반 로그인 폼 -->
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label class="form-label" for="id_login">
+                        <i class="fas fa-user" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        사용자명 또는 이메일
+                    </label>
+                    <input type="text" name="login" id="id_login" class="form-control" placeholder="사용자명 또는 이메일을 입력하세요" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="id_password">
+                        <i class="fas fa-lock" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        비밀번호
+                    </label>
+                    <input type="password" name="password" id="id_password" class="form-control" placeholder="비밀번호를 입력하세요" required>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">
+                        <input type="checkbox" name="remember" style="margin: 0;">
+                        로그인 상태 유지
+                    </label>
+                    <a href="{% url 'account_reset_password' %}" style="color: var(--btn-primary-bg); font-size: 0.875rem; text-decoration: none;">
+                        비밀번호 찾기
+                    </a>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-sign-in-alt"></i>
+                    로그인
+                </button>
+            </form>
+
+            <!-- 회원가입 링크 -->
+            <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--card-border);">
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">
+                    아직 계정이 없으신가요?
+                </p>
+                <a href="{% url 'account_signup' %}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-user-plus"></i>
+                    회원가입
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.space-y-4 > * + * {
+    margin-top: 1rem;
+}
+
+.fab {
+    font-family: "Font Awesome 5 Brands";
+}
+</style>
+{% endblock %}
+

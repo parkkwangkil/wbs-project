@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}사용자 목록 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}사용자 목록{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-users" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                전체 사용자
+            </h2>
+        </div>
+        <div class="card-body">
+            {% if users %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for user in users %}
+                        <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div class="avatar avatar-lg" style="background: var(--btn-primary-bg); color: white;">
+                                    {{ user.username|first|upper }}
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <h3 style="font-weight: 600; color: var(--text-heading); font-size: 1rem; margin-bottom: 0.25rem;">
+                                        {{ user.first_name }} {{ user.last_name|default:user.username }}
+                                    </h3>
+                                    <p style="color: var(--text-secondary); font-size: 0.875rem;">@{{ user.username }}</p>
+                                </div>
+                            </div>
+                            
+                            {% if user.profile %}
+                                {% if user.profile.department and user.profile.position %}
+                                    <p style="color: var(--text-body); font-size: 0.875rem;">
+                                        <i class="fas fa-briefcase" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                                        {{ user.profile.position }} - {{ user.profile.department }}
+                                    </p>
+                                {% endif %}
+                                
+                                {% if user.profile.location %}
+                                    <p style="color: var(--text-body); font-size: 0.875rem;">
+                                        <i class="fas fa-map-marker-alt" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                                        {{ user.profile.location }}
+                                    </p>
+                                {% endif %}
+                            {% endif %}
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; color: var(--text-secondary);">
+                                <span>가입일: {{ user.date_joined|date:"Y-m-d" }}</span>
+                                <span>프로젝트: {{ user.managed_projects.count }}개</span>
+                            </div>
+                            
+                            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                <a href="{% url 'wbs:user_detail' user.id %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-eye"></i>
+                                    보기
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);">
+                    <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 1rem; color: var(--text-disabled);"></i>
+                    <p style="font-size: 1.125rem; margin-bottom: 0.5rem;">사용자가 없습니다</p>
+                    <p>아직 등록된 사용자가 없습니다.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

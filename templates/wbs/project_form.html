@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if form.instance.pk %}프로젝트 편집{% else %}프로젝트 생성{% endif %} - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}{% if form.instance.pk %}프로젝트 편집{% else %}프로젝트 생성{% endif %}{% endblock %}
+
+{% block content %}
+<div style="width: 100%; margin: 0; padding: 0 3rem;">
+    <div class="card">
+        <div class="card-header" style="text-align: center; padding: 2rem 2rem 1rem;">
+            <div style="width: 60px; height: 60px; background: var(--sidebar-hover-bg); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                <i class="fas fa-{% if form.instance.pk %}edit{% else %}plus{% endif %}" style="color: var(--sidebar-active-color); font-size: 1.5rem;"></i>
+            </div>
+            <h1 style="color: var(--text-heading); font-size: 1.5rem; font-weight: 600; margin: 0;">
+                {% if form.instance.pk %}프로젝트 편집{% else %}새 프로젝트 생성{% endif %}
+            </h1>
+            <p style="color: var(--text-secondary); margin: 0.5rem 0 0 0; font-size: 0.875rem;">
+                {% if form.instance.pk %}프로젝트 정보를 수정하세요{% else %}새로운 프로젝트를 만들어보세요{% endif %}
+            </p>
+        </div>
+        <div class="card-body" style="padding: 2rem 2rem;">
+            {% if user_subscription %}
+                <div style="background: var(--sidebar-hover-bg); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid var(--card-border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h4 style="color: var(--text-heading); margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 600;">현재 플랜: {{ user_subscription.plan.display_name }}</h4>
+                            <p style="color: var(--text-body); margin: 0; font-size: 0.875rem;">
+                                프로젝트 사용량: {{ user_subscription.projects_created }}/{{ user_subscription.plan.max_projects }}
+                                {% if user_subscription.plan.max_projects == -1 %}(무제한){% endif %}
+                            </p>
+                        </div>
+                        {% if user_subscription.projects_created >= user_subscription.plan.max_projects and user_subscription.plan.max_projects != -1 %}
+                            <a href="{% url 'wbs:subscription_plans' %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-crown"></i>
+                                플랜 업그레이드
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Project Basic Information -->
+                <div style="display: grid; grid-template-columns: 0.455fr 0.455fr; gap: 3rem; justify-content: start;">
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.title.id_for_label }}">
+                            <i class="fas fa-tag" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                            프로젝트명
+                        </label>
+                        <div style="position: relative;">
+                            {{ form.title }}
+                        </div>
+                        {% if form.title.errors %}
+                            <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {% for error in form.title.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.status.id_for_label }}">
+                            <i class="fas fa-flag" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                            상태
+                        </label>
+                        <div style="position: relative;">
+                            {{ form.status }}
+                        </div>
+                        {% if form.status.errors %}
+                            <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {% for error in form.status.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group" style="max-width: 91%;">
+                    <label class="form-label" for="{{ form.description.id_for_label }}">
+                        <i class="fas fa-align-left" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        설명
+                    </label>
+                    <div style="position: relative;">
+                        {{ form.description }}
+                    </div>
+                    {% if form.description.errors %}
+                        <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {% for error in form.description.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Project Timeline -->
+                <div style="display: grid; grid-template-columns: 0.455fr 0.455fr; gap: 3rem; justify-content: start;">
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.start_date.id_for_label }}">
+                            <i class="fas fa-calendar-alt" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                            시작일
+                        </label>
+                        <div style="position: relative;">
+                            {{ form.start_date }}
+                        </div>
+                        {% if form.start_date.errors %}
+                            <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {% for error in form.start_date.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.end_date.id_for_label }}">
+                            <i class="fas fa-calendar-check" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                            종료일
+                        </label>
+                        <div style="position: relative;">
+                            {{ form.end_date }}
+                        </div>
+                        {% if form.end_date.errors %}
+                            <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {% for error in form.end_date.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Project Details -->
+                <div style="display: grid; grid-template-columns: 0.455fr 0.455fr; gap: 3rem; justify-content: start;">
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.budget.id_for_label }}">
+                            <i class="fas fa-dollar-sign" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                            예산
+                        </label>
+                        <div style="position: relative;">
+                            {{ form.budget }}
+                        </div>
+                        {% if form.budget.errors %}
+                            <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {% for error in form.budget.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.priority.id_for_label }}">
+                            <i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                            우선순위
+                        </label>
+                        <div style="position: relative;">
+                            {{ form.priority }}
+                        </div>
+                        {% if form.priority.errors %}
+                            <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {% for error in form.priority.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Project Manager -->
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.manager.id_for_label }}">
+                        <i class="fas fa-user-tie" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        프로젝트 매니저
+                    </label>
+                    <div style="position: relative;">
+                        {{ form.manager }}
+                    </div>
+                    {% if form.manager.errors %}
+                        <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {% for error in form.manager.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Project Color Theme -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-palette" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        색상 테마
+                    </label>
+                    <div class="color-theme-grid">
+                        <label class="color-option {% if form.color_theme.value == 'blue' %}selected{% endif %}">
+                            <input type="radio" name="color_theme" value="blue" {% if form.color_theme.value == 'blue' %}checked{% endif %}>
+                            <span class="color-preview blue"></span>
+                            <span class="color-name">파란색</span>
+                        </label>
+                        <label class="color-option {% if form.color_theme.value == 'green' %}selected{% endif %}">
+                            <input type="radio" name="color_theme" value="green" {% if form.color_theme.value == 'green' %}checked{% endif %}>
+                            <span class="color-preview green"></span>
+                            <span class="color-name">초록색</span>
+                        </label>
+                        <label class="color-option {% if form.color_theme.value == 'purple' %}selected{% endif %}">
+                            <input type="radio" name="color_theme" value="purple" {% if form.color_theme.value == 'purple' %}checked{% endif %}>
+                            <span class="color-preview purple"></span>
+                            <span class="color-name">보라색</span>
+                        </label>
+                        <label class="color-option {% if form.color_theme.value == 'red' %}selected{% endif %}">
+                            <input type="radio" name="color_theme" value="red" {% if form.color_theme.value == 'red' %}checked{% endif %}>
+                            <span class="color-preview red"></span>
+                            <span class="color-name">빨간색</span>
+                        </label>
+                        <label class="color-option {% if form.color_theme.value == 'orange' %}selected{% endif %}">
+                            <input type="radio" name="color_theme" value="orange" {% if form.color_theme.value == 'orange' %}checked{% endif %}>
+                            <span class="color-preview orange"></span>
+                            <span class="color-name">주황색</span>
+                        </label>
+                        <label class="color-option {% if form.color_theme.value == 'teal' %}selected{% endif %}">
+                            <input type="radio" name="color_theme" value="teal" {% if form.color_theme.value == 'teal' %}checked{% endif %}>
+                            <span class="color-preview teal"></span>
+                            <span class="color-name">청록색</span>
+                        </label>
+                        <label class="color-option {% if form.color_theme.value == 'pink' %}selected{% endif %}">
+                            <input type="radio" name="color_theme" value="pink" {% if form.color_theme.value == 'pink' %}checked{% endif %}>
+                            <span class="color-preview pink"></span>
+                            <span class="color-name">분홍색</span>
+                        </label>
+                        <label class="color-option {% if form.color_theme.value == 'indigo' %}selected{% endif %}">
+                            <input type="radio" name="color_theme" value="indigo" {% if form.color_theme.value == 'indigo' %}checked{% endif %}>
+                            <span class="color-preview indigo"></span>
+                            <span class="color-name">남색</span>
+                        </label>
+                        <label class="color-option {% if form.color_theme.value == 'yellow' %}selected{% endif %}">
+                            <input type="radio" name="color_theme" value="yellow" {% if form.color_theme.value == 'yellow' %}checked{% endif %}>
+                            <span class="color-preview yellow"></span>
+                            <span class="color-name">노란색</span>
+                        </label>
+                        <label class="color-option {% if form.color_theme.value == 'gray' %}selected{% endif %}">
+                            <input type="radio" name="color_theme" value="gray" {% if form.color_theme.value == 'gray' %}checked{% endif %}>
+                            <span class="color-preview gray"></span>
+                            <span class="color-name">회색</span>
+                        </label>
+                        <label class="color-option {% if form.color_theme.value == 'cyan' %}selected{% endif %}">
+                            <input type="radio" name="color_theme" value="cyan" {% if form.color_theme.value == 'cyan' %}checked{% endif %}>
+                            <span class="color-preview cyan"></span>
+                            <span class="color-name">시안색</span>
+                        </label>
+                        <label class="color-option {% if form.color_theme.value == 'lime' %}selected{% endif %}">
+                            <input type="radio" name="color_theme" value="lime" {% if form.color_theme.value == 'lime' %}checked{% endif %}>
+                            <span class="color-preview lime"></span>
+                            <span class="color-name">라임색</span>
+                        </label>
+                    </div>
+                    {% if form.color_theme.errors %}
+                        <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {% for error in form.color_theme.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Form Actions -->
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 2rem; border-top: 1px solid var(--card-border); margin-top: 2rem; max-width: 91%;">
+                    <a href="{% url 'wbs:project_list' %}" class="btn btn-secondary" style="padding: 0.75rem 2rem; font-size: 1rem;">
+                        <i class="fas fa-times"></i>
+                        취소
+                    </a>
+                    <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1rem;">
+                        <i class="fas fa-{% if form.instance.pk %}save{% else %}plus{% endif %}"></i>
+                        {% if form.instance.pk %}프로젝트 업데이트{% else %}프로젝트 생성{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.space-y-6 > * + * {
+    margin-top: 1.5rem;
+}
+</style>
+{% endblock %}

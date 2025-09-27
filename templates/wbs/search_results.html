@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}검색 결과 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}검색 결과{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 class="card-title">
+                <i class="fas fa-search" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                {% if query %}
+                    "{{ query }}" 검색 결과
+                {% else %}
+                    검색
+                {% endif %}
+            </h2>
+            {% if query %}
+                <span style="color: var(--text-secondary); font-size: 0.875rem;">
+                    총 {{ total_count }}개 결과
+                </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card-body">
+        <!-- 검색 폼 -->
+        <form method="GET" action="{% url 'wbs:search' %}" style="margin-bottom: 2rem;">
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <div style="flex: 1; position: relative;">
+                    <input 
+                        type="text" 
+                        name="q" 
+                        value="{{ query }}" 
+                        placeholder="프로젝트, 사용자, 알림 검색..." 
+                        style="width: 100%; padding: 0.75rem 1rem 0.75rem 2.75rem; border: 1px solid var(--card-border); border-radius: 10px; background: var(--card-bg);"
+                        autofocus
+                    >
+                    <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i>
+                    검색
+                </button>
+            </div>
+        </form>
+
+        {% if query %}
+            {% if total_count > 0 %}
+                <!-- 프로젝트 결과 -->
+                {% if projects %}
+                    <div style="margin-bottom: 2rem;">
+                        <h3 style="color: var(--text-heading); font-size: 1.125rem; margin-bottom: 1rem; display: flex; align-items: center;">
+                            <i class="fas fa-project-diagram" style="margin-right: 0.5rem; color: var(--sidebar-active-color);"></i>
+                            프로젝트 ({{ projects|length }}개)
+                        </h3>
+                        <div style="display: grid; gap: 1rem;">
+                            {% for project in projects %}
+                                <div class="card" style="margin-bottom: 0;">
+                                    <div class="card-body" style="padding: 1rem;">
+                                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                                            <div style="flex: 1;">
+                                                <h4 style="margin: 0 0 0.5rem 0;">
+                                                    <a href="{% url 'wbs:project_detail' project.pk %}" style="color: var(--text-heading); text-decoration: none;">
+                                                        {{ project.title }}
+                                                    </a>
+                                                </h4>
+                                                <p style="color: var(--text-body); margin: 0 0 0.5rem 0; font-size: 0.875rem;">
+                                                    {{ project.description|truncatechars:100 }}
+                                                </p>
+                                                <div style="display: flex; gap: 1rem; font-size: 0.75rem; color: var(--text-secondary);">
+                                                    <span><i class="fas fa-user"></i> {{ project.manager.username }}</span>
+                                                    <span><i class="fas fa-calendar"></i> {{ project.created_at|date:"Y.m.d" }}</span>
+                                                </div>
+                                            </div>
+                                            <span class="badge badge-{{ project.status }}">{{ project.get_status_display }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- 사용자 결과 (관리자만) -->
+                {% if users %}
+                    <div style="margin-bottom: 2rem;">
+                        <h3 style="color: var(--text-heading); font-size: 1.125rem; margin-bottom: 1rem; display: flex; align-items: center;">
+                            <i class="fas fa-users" style="margin-right: 0.5rem; color: var(--sidebar-active-color);"></i>
+                            사용자 ({{ users|length }}개)
+                        </h3>
+                        <div style="display: grid; gap: 1rem;">
+                            {% for user in users %}
+                                <div class="card" style="margin-bottom: 0;">
+                                    <div class="card-body" style="padding: 1rem;">
+                                        <div style="display: flex; align-items: center; gap: 1rem;">
+                                            <div style="width: 40px; height: 40px; background: var(--sidebar-hover-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--sidebar-active-color); font-weight: 600;">
+                                                {{ user.username|first|upper }}
+                                            </div>
+                                            <div style="flex: 1;">
+                                                <h4 style="margin: 0 0 0.25rem 0;">
+                                                    <a href="{% url 'wbs:user_detail' user.id %}" style="color: var(--text-heading); text-decoration: none;">
+                                                        {{ user.username }}
+                                                        {% if user.first_name or user.last_name %}
+                                                            ({{ user.first_name }} {{ user.last_name }})
+                                                        {% endif %}
+                                                    </a>
+                                                </h4>
+                                                <p style="color: var(--text-secondary); margin: 0; font-size: 0.875rem;">
+                                                    {{ user.email }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- 알림 결과 -->
+                {% if notifications %}
+                    <div style="margin-bottom: 2rem;">
+                        <h3 style="color: var(--text-heading); font-size: 1.125rem; margin-bottom: 1rem; display: flex; align-items: center;">
+                            <i class="fas fa-bell" style="margin-right: 0.5rem; color: var(--sidebar-active-color);"></i>
+                            알림 ({{ notifications|length }}개)
+                        </h3>
+                        <div style="display: grid; gap: 1rem;">
+                            {% for notification in notifications %}
+                                <div class="card" style="margin-bottom: 0;">
+                                    <div class="card-body" style="padding: 1rem;">
+                                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                                            <div style="flex: 1;">
+                                                <p style="color: var(--text-body); margin: 0 0 0.5rem 0;">
+                                                    {{ notification.message }}
+                                                </p>
+                                                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                                                    <i class="fas fa-clock"></i> 
+                                                    {{ notification.created_at|date:"Y.m.d H:i" }}
+                                                </div>
+                                            </div>
+                                            {% if not notification.read_at %}
+                                                <span style="width: 8px; height: 8px; background: #EF4444; border-radius: 50%; flex-shrink: 0; margin-top: 0.5rem;"></span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <!-- 검색 결과 없음 -->
+                <div style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);">
+                    <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                    <h3 style="margin-bottom: 0.5rem;">검색 결과가 없습니다</h3>
+                    <p style="margin: 0;">다른 키워드로 다시 검색해보세요.</p>
+                </div>
+            {% endif %}
+        {% else %}
+            <!-- 검색어 입력 안내 -->
+            <div style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);">
+                <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                <h3 style="margin-bottom: 0.5rem;">검색어를 입력하세요</h3>
+                <p style="margin: 0;">프로젝트, 사용자, 알림을 검색할 수 있습니다.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

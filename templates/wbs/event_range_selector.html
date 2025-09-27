@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+
+{% block title %}일정 범위 선택 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}일정 범위 선택{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-calendar-range" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                일정 범위 선택
+            </h2>
+        </div>
+        <div class="card-body">
+            <!-- 날짜 범위 선택기 -->
+            <div id="dateRangeSelector" style="margin-bottom: 2rem;">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <label style="color: var(--text-heading); font-weight: 500; min-width: 80px;">시작일:</label>
+                        <input type="date" id="startDate" style="padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-arrow-right" style="color: var(--text-secondary);"></i>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <label style="color: var(--text-heading); font-weight: 500; min-width: 80px;">종료일:</label>
+                        <input type="date" id="endDate" style="padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
+                    </div>
+                    
+                    <button onclick="updateDateRange()" class="btn btn-primary btn-sm">
+                        <i class="fas fa-sync"></i>
+                        업데이트
+                    </button>
+                </div>
+                
+                <!-- 선택된 날짜 범위 표시 -->
+                <div id="selectedRange" style="background: var(--sidebar-hover); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: none;">
+                    <h4 style="color: var(--text-heading); margin: 0 0 0.5rem 0;">선택된 날짜 범위</h4>
+                    <div id="rangeInfo" style="color: var(--text-body);"></div>
+                </div>
+            </div>
+            
+            <!-- 일정 생성 폼 -->
+            <div id="eventForm" style="display: none;">
+                <form id="rangeEventForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="formStartDate" name="start_date">
+                    <input type="hidden" id="formEndDate" name="end_date">
+                    
+                    <div style="display: grid; gap: 1.5rem;">
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                일정 제목 <span style="color: #ef4444;">*</span>
+                            </label>
+                            <input type="text" name="title" id="eventTitle" required 
+                                   style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);"
+                                   placeholder="일정 제목을 입력하세요">
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                설명
+                            </label>
+                            <textarea name="description" id="eventDescription" rows="3"
+                                      style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface); resize: vertical;"
+                                      placeholder="일정에 대한 설명을 입력하세요"></textarea>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                    일정 유형
+                                </label>
+                                <select name="event_type" id="eventType" 
+                                        style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
+                                    <option value="personal">개인 일정</option>
+                                    <option value="meeting">회의</option>
+                                    <option value="deadline">마감일</option>
+                                    <option value="reminder">알림</option>
+                                    <option value="holiday">휴일</option>
+                                    <option value="other">기타</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                    우선순위
+                                </label>
+                                <select name="priority" id="eventPriority" 
+                                        style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
+                                    <option value="low">낮음</option>
+                                    <option value="medium" selected>보통</option>
+                                    <option value="high">높음</option>
+                                    <option value="urgent">긴급</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                    시작 시간
+                                </label>
+                                <input type="time" name="start_time" id="startTime" 
+                                       style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                    종료 시간
+                                </label>
+                                <input type="time" name="end_time" id="endTime" 
+                                       style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);">
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--sidebar-hover); border-radius: 8px;">
+                            <input type="checkbox" name="is_all_day" id="isAllDay" style="transform: scale(1.2);">
+                            <label for="isAllDay" style="color: var(--text-heading); font-weight: 500; cursor: pointer;">
+                                하루 종일
+                            </label>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                장소
+                            </label>
+                            <input type="text" name="location" id="eventLocation" 
+                                   style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);"
+                                   placeholder="장소를 입력하세요">
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-heading); font-weight: 500;">
+                                회의 링크
+                            </label>
+                            <input type="url" name="meeting_link" id="meetingLink" 
+                                   style="width: 100%; padding: 0.5rem; border: 1px solid var(--card-border); border-radius: 4px; background: var(--bg-surface);"
+                                   placeholder="회의 링크를 입력하세요">
+                        </div>
+                        
+                        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                            <button type="button" onclick="resetForm()" class="btn btn-secondary">
+                                <i class="fas fa-undo"></i>
+                                초기화
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                일정 생성
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 오늘 날짜를 기본값으로 설정
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    document.getElementById('startDate').value = today.toISOString().split('T')[0];
+    document.getElementById('endDate').value = tomorrow.toISOString().split('T')[0];
+    
+    updateDateRange();
+});
+
+function updateDateRange() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        if (start <= end) {
+            // 선택된 범위 표시
+            const rangeInfo = document.getElementById('rangeInfo');
+            const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+            
+            rangeInfo.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar-alt" style="color: var(--btn-primary-bg);"></i>
+                    <span><strong>${formatDate(start)}</strong> ~ <strong>${formatDate(end)}</strong></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <i class="fas fa-clock" style="color: var(--text-secondary);"></i>
+                    <span>총 <strong>${daysDiff}일</strong>간의 일정</span>
+                </div>
+            `;
+            
+            document.getElementById('selectedRange').style.display = 'block';
+            document.getElementById('eventForm').style.display = 'block';
+            
+            // 폼에 날짜 설정
+            document.getElementById('formStartDate').value = startDate;
+            document.getElementById('formEndDate').value = endDate;
+        } else {
+            alert('종료일은 시작일보다 늦어야 합니다.');
+        }
+    }
+}
+
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+    const weekday = weekdays[date.getDay()];
+    
+    return `${year}년 ${month}월 ${day}일 (${weekday})`;
+}
+
+// 하루 종일 체크박스 토글
+document.getElementById('isAllDay').addEventListener('change', function() {
+    const timeFields = document.querySelectorAll('#startTime, #endTime');
+    timeFields.forEach(field => {
+        field.disabled = this.checked;
+        if (this.checked) {
+            field.value = '';
+        }
+    });
+});
+
+// 폼 제출 처리
+document.getElementById('rangeEventForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch('{% url "wbs:event_create" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response;
+        } else {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            return response.json();
+        }
+    })
+    .then(data => {
+        if (data && data.success) {
+            alert('일정이 성공적으로 생성되었습니다!');
+            window.location.href = '{% url "wbs:event_list" %}';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('일정 생성 중 오류가 발생했습니다: ' + error.message);
+    });
+});
+
+function resetForm() {
+    document.getElementById('rangeEventForm').reset();
+    document.getElementById('selectedRange').style.display = 'none';
+    document.getElementById('eventForm').style.display = 'none';
+    
+    // 날짜를 오늘/내일로 재설정
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    document.getElementById('startDate').value = today.toISOString().split('T')[0];
+    document.getElementById('endDate').value = tomorrow.toISOString().split('T')[0];
+}
+</script>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}내 구독 관리{% endblock %}
+
+{% block page_title %}내 구독 관리{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title" style="display:flex;align-items:center;gap:.5rem;">
+        <i class="fas fa-id-badge" style="color:var(--text-secondary);"></i>
+        현재 구독 정보
+      </h2>
+    </div>
+    <div class="card-body">
+      {% if subscription %}
+        <div style="display:grid;gap:1rem;">
+          <div style="display:grid;grid-template-columns:160px 1fr;gap:.75rem;align-items:center;">
+            <div style="color:var(--text-secondary);">플랜</div>
+            <div style="color:var(--text-heading);font-weight:600;">{{ subscription.plan.display_name }}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:160px 1fr;gap:.75rem;align-items:center;">
+            <div style="color:var(--text-secondary);">상태</div>
+            <div>{{ subscription.status }}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:160px 1fr;gap:.75rem;align-items:center;">
+            <div style="color:var(--text-secondary);">기간</div>
+            <div>{{ subscription.start_date|date:'Y-m-d' }} ~ {{ subscription.end_date|date:'Y-m-d' }}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:160px 1fr;gap:.75rem;align-items:center;">
+            <div style="color:var(--text-secondary);">자동 갱신</div>
+            <div>{{ subscription.auto_renew|yesno:'사용,미사용' }}</div>
+          </div>
+        </div>
+        <div style="margin-top:1.25rem;display:flex;gap:.5rem;">
+          <a href="{% url 'wbs:subscription_plans' %}" class="btn btn-secondary"><i class="fas fa-sync"></i> 플랜 변경</a>
+        </div>
+      {% else %}
+        <div style="color:var(--text-secondary);">구독 정보가 없습니다. 플랜을 선택해 시작해보세요.</div>
+        <div style="margin-top:1rem;">
+          <a href="{% url 'wbs:subscription_plans' %}" class="btn btn-primary"><i class="fas fa-list"></i> 플랜 보기</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+

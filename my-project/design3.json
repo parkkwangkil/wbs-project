@@ -1,0 +1,238 @@
+
+{
+    "designSystem": {
+      "tokens": {
+        "surfaces": {
+          "appBackground": "#EFE5EB",
+          "panel": "#FCFCFD",
+          "subtle": "#F7F6F7"
+        },
+        "borders": {
+          "default": "#E9EBEC",
+          "muted": "#E4DCE0"
+        },
+        "text": {
+          "primary": "#2D2D2D",
+          "secondary": "#AEADB4",
+          "disabled": "#CBC9CB",
+          "inverse": "#FFFFFF"
+        },
+        "brand": {
+          "primary": "#7C8EDE",
+          "primarySoft": "#A8BEED",
+          "accentPink": "#F0B7CA"
+        },
+        "semantic": {
+          "success": { "bg": "#A3DDBF", "fg": "#2D2D2D", "strong": "#52B198" },
+          "warning": { "bg": "#F0A74A", "fg": "#2D2D2D" },
+          "danger": { "bg": "#D75872", "fg": "#FFFFFF" },
+          "info": { "bg": "#A8BEED", "fg": "#2D2D2D" }
+        },
+        "charts": {
+          "marketGradient": {
+            "type": "linear",
+            "angle": 180,
+            "stops": [
+              { "color": "#F0B7CA", "at": "0%" },
+              { "color": "#A8BEED", "at": "100%" }
+            ]
+          }
+        },
+        "shadows": {
+          "card": "0 8px 24px rgba(0,0,0,0.08)",
+          "popover": "0 12px 32px rgba(0,0,0,0.12)",
+          "focusRing": "0 0 0 3px rgba(124,142,222,0.35)"
+        },
+        "radius": {
+          "sm": "8px",
+          "md": "12px",
+          "lg": "16px",
+          "pill": "9999px"
+        }
+      },
+  
+      "componentStyles": {
+        "appShell": {
+          "background": "{tokens.surfaces.appBackground}",
+          "panelBackground": "{tokens.tokens.surfaces.panel}",
+          "shadow": "{tokens.shadows.card}",
+          "radii": "{tokens.radius.lg}",
+          "contentPadding": "24px"
+        },
+  
+        "sidebar": {
+          "surface": "#FFFFFF",
+          "borderRight": "{tokens.borders.default}",
+          "item": {
+            "text": "{tokens.text.secondary}",
+            "icon": "{tokens.text.secondary}",
+            "hoverBg": "#F7F6F7",
+            "activeBg": "#EEF1FE",
+            "activeText": "{tokens.brand.primary}"
+          },
+          "sectionBadge": {
+            "bg": "{tokens.brand.primarySoft}",
+            "fg": "{tokens.text.primary}"
+          }
+        },
+  
+        "topbar": {
+          "surface": "#FFFFFF",
+          "borderBottom": "{tokens.borders.default}",
+          "search": {
+            "bg": "#F7F6F7",
+            "placeholder": "{tokens.text.secondary}",
+            "icon": "{tokens.text.secondary}",
+            "focusRing": "{tokens.shadows.focusRing}"
+          },
+          "quickActions": {
+            "icon": "{tokens.text.primary}",
+            "badgeBg": "{tokens.semantic.danger.bg}"
+          }
+        },
+  
+        "cards": {
+          "surfaceColor": "#FFFFFF",
+          "border": "{tokens.borders.default}",
+          "radius": "{tokens.radius.md}",
+          "shadow": "{tokens.shadows.card}",
+          "header": { "titleColor": "{tokens.text.primary}", "metaColor": "{tokens.text.secondary}" }
+        },
+  
+        "charts": {
+          "marketSummary": {
+            "barGradient": "{tokens.charts.marketGradient}",
+            "axisColor": "#AEADB4",
+            "tooltip": {
+              "bg": "#FFFFFF",
+              "text": "{tokens.text.primary}",
+              "shadow": "0 10px 24px rgba(0,0,0,0.12)",
+              "border": "{tokens.borders.default}"
+            }
+          }
+        },
+  
+        "exchangePanel": {
+          "surface": "#FFFFFF",
+          "border": "{tokens.borders.default}",
+          "radius": "{tokens.radius.md}",
+          "inputs": {
+            "bg": "#F7F6F7",
+            "text": "{tokens.text.primary}",
+            "subtext": "{tokens.text.secondary}",
+            "icon": "{tokens.text.secondary}",
+            "focusRing": "{tokens.shadows.focusRing}"
+          },
+          "swapToggle": {
+            "iconBg": "#FFFFFF",
+            "iconFg": "{tokens.text.primary}",
+            "shadow": "0 6px 16px rgba(0,0,0,0.12)"
+          },
+          "primaryAction": {
+            "bg": "linear-gradient(180deg, #2D2D2D 0%, #111111 100%)",
+            "text": "#FFFFFF",
+            "hoverBg": "linear-gradient(180deg, #3A3A3A 0%, #1A1A1A 100%)",
+            "disabledBg": "#CBC9CB",
+            "disabledText": "#FFFFFF"
+          }
+        },
+  
+        "tables": {
+          "headerBg": "#FFFFFF",
+          "rowBg": "#FFFFFF",
+          "rowHover": "#F7F6F7",
+          "divider": "{tokens.borders.default}",
+          "pill": {
+            "radius": "{tokens.radius.pill}",
+            "status": {
+              "rising": { "bg": "{tokens.semantic.success.bg}", "fg": "{tokens.text.primary}" },
+              "falling": { "bg": "{tokens.semantic.danger.bg}", "fg": "{tokens.semantic.danger.fg}" },
+              "volatile": { "bg": "{tokens.semantic.warning.bg}", "fg": "{tokens.text.primary}" }
+            }
+          }
+        },
+  
+        "buttons": {
+          "primary": {
+            "bg": "{tokens.brand.primary}",
+            "text": "{tokens.text.inverse}",
+            "hoverBg": "#6B7ED8",
+            "activeBg": "#5C70D4",
+            "focusRing": "{tokens.shadows.focusRing}",
+            "disabledBg": "#E9EBEC",
+            "disabledText": "{tokens.text.disabled}"
+          },
+          "secondary": {
+            "bg": "#FFFFFF",
+            "border": "{tokens.borders.default}",
+            "text": "{tokens.text.primary}",
+            "hoverBg": "#F7F6F7",
+            "activeBg": "#EFEFF1"
+          },
+          "ghost": {
+            "bg": "transparent",
+            "text": "{tokens.text.primary}",
+            "hoverBg": "#F7F6F7"
+          }
+        },
+  
+        "inputs": {
+          "bg": "#FFFFFF",
+          "border": "{tokens.borders.default}",
+          "placeholder": "{tokens.text.secondary}",
+          "text": "{tokens.text.primary}",
+          "hoverBorder": "#D8DADD",
+          "focusRing": "{tokens.shadows.focusRing}",
+          "disabledBg": "#F7F6F7",
+          "disabledText": "{tokens.text.disabled}"
+        },
+  
+        "badges": {
+          "new": { "bg": "{tokens.brand.primarySoft}", "fg": "{tokens.text.primary}" },
+          "unreadDot": "#D75872"
+        },
+  
+        "overlays": {
+          "modal": {
+            "scrim": "rgba(0,0,0,0.35)",
+            "panelBg": "#FFFFFF",
+            "shadow": "{tokens.shadows.popover}",
+            "radius": "{tokens.radius.lg}"
+          },
+          "popover": {
+            "panelBg": "#FFFFFF",
+            "border": "{tokens.borders.default}",
+            "shadow": "{tokens.shadows.popover}"
+          },
+          "tooltip": {
+            "bg": "#2D2D2D",
+            "text": "#FFFFFF",
+            "radius": "{tokens.radius.sm}"
+          }
+        }
+      },
+  
+      "states": {
+        "interactive": {
+          "hover": { "opacity": 0.96, "translateY": 0 },
+          "active": { "opacity": 0.94, "translateY": 1 },
+          "focus": { "ring": "{tokens.shadows.focusRing}" },
+          "disabled": { "opacity": 0.55, "cursor": "not-allowed" }
+        },
+        "tableRows": {
+          "selected": { "bg": "#EEF1FE", "border": "#D8DDF8" }
+        }
+      },
+  
+      "accessibility": {
+        "minContrastAA": 4.5,
+        "pairs": [
+          { "fg": "{tokens.text.primary}", "bg": "#FFFFFF" },
+          { "fg": "{tokens.text.primary}", "bg": "{tokens.surfaces.appBackground}" },
+          { "fg": "{tokens.text.inverse}", "bg": "{componentStyles.buttons.primary.bg}" },
+          { "fg": "{tokens.text.inverse}", "bg": "{componentStyles.exchangePanel.primaryAction.bg}" }
+        ]
+      }
+    }
+  }
+  

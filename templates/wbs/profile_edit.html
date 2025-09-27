@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}프로필 편집 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}프로필 편집{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- 기본 정보 편집 -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-user" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                기본 정보
+            </h2>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- 사용자 기본 정보 -->
+                <div style="margin-bottom: 2rem;">
+                    <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--text-heading); margin-bottom: 1rem;">
+                        계정 정보
+                    </h3>
+                    
+                    <div class="form-group">
+                        <label for="{{ user_form.first_name.id_for_label }}" class="form-label">이름</label>
+                        {{ user_form.first_name }}
+                        {% for error in user_form.first_name.errors %}
+                            <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ user_form.last_name.id_for_label }}" class="form-label">성</label>
+                        {{ user_form.last_name }}
+                        {% for error in user_form.last_name.errors %}
+                            <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ user_form.email.id_for_label }}" class="form-label">이메일</label>
+                        {{ user_form.email }}
+                        {% for error in user_form.email.errors %}
+                            <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- 프로필 정보 -->
+                <div>
+                    <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--text-heading); margin-bottom: 1rem;">
+                        프로필 정보
+                    </h3>
+                    
+                    <div class="form-group">
+                        <label for="{{ profile_form.avatar.id_for_label }}" class="form-label">프로필 이미지</label>
+                        {{ profile_form.avatar }}
+                        {% if profile.avatar %}
+                            <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.5rem;">
+                                현재 이미지: <a href="{{ profile.avatar.url }}" target="_blank">{{ profile.avatar.name }}</a>
+                            </p>
+                        {% endif %}
+                        {% for error in profile_form.avatar.errors %}
+                            <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ profile_form.bio.id_for_label }}" class="form-label">자기소개</label>
+                        {{ profile_form.bio }}
+                        {% for error in profile_form.bio.errors %}
+                            <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ profile_form.phone.id_for_label }}" class="form-label">전화번호</label>
+                        {{ profile_form.phone }}
+                        {% for error in profile_form.phone.errors %}
+                            <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- 저장 버튼 -->
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1.5rem; border-top: 1px solid var(--card-border); margin-top: 2rem;">
+                    <a href="{% url 'wbs:profile' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i>
+                        취소
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        저장
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 추가 정보 편집 -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-info-circle" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                추가 정보
+            </h2>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="{{ profile_form.department.id_for_label }}" class="form-label">부서</label>
+                    {{ profile_form.department }}
+                    {% for error in profile_form.department.errors %}
+                        <p class="error-message">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ profile_form.position.id_for_label }}" class="form-label">직책</label>
+                    {{ profile_form.position }}
+                    {% for error in profile_form.position.errors %}
+                        <p class="error-message">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ profile_form.birth_date.id_for_label }}" class="form-label">생년월일</label>
+                    {{ profile_form.birth_date }}
+                    {% for error in profile_form.birth_date.errors %}
+                        <p class="error-message">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ profile_form.location.id_for_label }}" class="form-label">위치</label>
+                    {{ profile_form.location }}
+                    {% for error in profile_form.location.errors %}
+                        <p class="error-message">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ profile_form.website.id_for_label }}" class="form-label">웹사이트</label>
+                    {{ profile_form.website }}
+                    {% for error in profile_form.website.errors %}
+                        <p class="error-message">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                
+                <!-- 미리보기 -->
+                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--card-border);">
+                    <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--text-heading); margin-bottom: 1rem;">
+                        미리보기
+                    </h3>
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--card-bg); border-radius: 8px; border: 1px solid var(--card-border);">
+                        <div class="avatar avatar-md" style="background: var(--btn-primary-bg); color: white;">
+                            {{ user.username|first|upper }}
+                        </div>
+                        <div>
+                            <div style="font-weight: 500; color: var(--text-heading);">
+                                {{ user.first_name }} {{ user.last_name|default:user.username }}
+                            </div>
+                            <div style="color: var(--text-secondary); font-size: 0.875rem;">
+                                @{{ user.username }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 폼 스타일링 */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 500;
+    color: var(--text-heading);
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--btn-primary-bg);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.error-message {
+    color: #EF4444;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .grid.grid-cols-1.lg\\:grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+

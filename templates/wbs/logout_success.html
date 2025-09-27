@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}로그아웃 완료 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}로그아웃 완료{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: 3rem 2rem;">
+            <!-- 로그아웃 성공 아이콘 -->
+            <div style="margin-bottom: 2rem;">
+                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #10B981, #059669); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                    <i class="fas fa-check" style="font-size: 2rem; color: white;"></i>
+                </div>
+            </div>
+            
+            <!-- 메시지 -->
+            <h2 style="color: var(--text-heading); margin-bottom: 1rem; font-size: 1.5rem;">
+                로그아웃이 완료되었습니다
+            </h2>
+            <p style="color: var(--text-body); margin-bottom: 2rem; font-size: 1rem; line-height: 1.6;">
+                안전하게 로그아웃되었습니다.<br>
+                다시 로그인하시려면 아래 버튼을 클릭해주세요.
+            </p>
+            
+            <!-- 로그인 버튼 -->
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <a href="{% url 'wbs:custom_login' %}" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1rem;">
+                    <i class="fas fa-sign-in-alt" style="margin-right: 0.5rem;"></i>
+                    로그인 페이지로 이동
+                </a>
+                <a href="{% url 'wbs:home' %}" class="btn btn-secondary" style="padding: 0.75rem 2rem; font-size: 1rem;">
+                    <i class="fas fa-home" style="margin-right: 0.5rem;"></i>
+                    홈으로 이동
+                </a>
+            </div>
+            
+            <!-- 추가 정보 -->
+            <div style="margin-top: 2rem; padding: 1rem; background: var(--sidebar-hover); border-radius: 8px; border: 1px solid var(--card-border);">
+                <p style="color: var(--text-secondary); margin: 0; font-size: 0.875rem;">
+                    <i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>
+                    보안을 위해 브라우저를 완전히 종료하시는 것을 권장합니다.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 버튼 호버 효과 */
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+/* 애니메이션 효과 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* 성공 아이콘 애니메이션 */
+.card-body > div:first-child {
+    animation: bounceIn 0.8s ease-out;
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+</style>
+{% endblock %}
+

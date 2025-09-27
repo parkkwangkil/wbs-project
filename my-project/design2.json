@@ -1,0 +1,62 @@
+{
+  "designSystem": {
+    "componentStyles": {
+      "modals": {
+        "background": "#FFFFFF",
+        "overlay": "rgba(0, 0, 0, 0.5)",
+        "border": "#E5E7EB",
+        "radius": "8px",
+        "shadow": "0px 4px 12px rgba(0,0,0,0.15)"
+      },
+      "alerts": {
+        "success": {
+          "bg": "#D1FAE5",
+          "text": "#065F46",
+          "border": "#A7F3D0"
+        },
+        "warning": {
+          "bg": "#FEF3C7",
+          "text": "#92400E",
+          "border": "#FCD34D"
+        },
+        "error": {
+          "bg": "#FEE2E2",
+          "text": "#991B1B",
+          "border": "#FCA5A5"
+        },
+        "info": {
+          "bg": "#DBEAFE",
+          "text": "#1E40AF",
+          "border": "#93C5FD"
+        }
+      },
+      "forms": {
+        "input": {
+          "background": "#FFFFFF",
+          "border": "#D1D5DB",
+          "borderFocus": "#4F46E5",
+          "radius": "6px",
+          "padding": "8px 12px"
+        },
+        "label": {
+          "color": "#374151",
+          "fontWeight": "500",
+          "marginBottom": "4px"
+        }
+      },
+      "tables": {
+        "header": {
+          "background": "#F9FAFB",
+          "border": "#E5E7EB",
+          "text": "#374151"
+        },
+        "row": {
+          "background": "#FFFFFF",
+          "border": "#F3F4F6",
+          "hover": "#F9FAFB"
+        }
+      }
+    }
+  }
+}
+

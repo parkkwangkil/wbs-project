@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ event.title }} - 일정 상세{% endblock %}
+
+{% block page_title %}{{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- 메인 정보 -->
+    <div class="lg:col-span-2">
+        <div class="card">
+            <div class="card-header">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 class="card-title">
+                        <i class="{{ event.type_icon }}" style="margin-right: 0.5rem; color: {{ event.priority_color }};"></i>
+                        {{ event.title }}
+                    </h2>
+                    <div style="display: flex; gap: 0.5rem;">
+                        {% if can_edit %}
+                            <a href="{% url 'wbs:event_edit' event.pk %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-edit"></i>
+                                편집
+                            </a>
+                            <a href="{% url 'wbs:event_delete' event.pk %}" class="btn btn-danger btn-sm"
+                               onclick="return confirm('정말로 이 일정을 삭제하시겠습니까?')">
+                                <i class="fas fa-trash"></i>
+                                삭제
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- 기본 정보 -->
+                <div style="margin-bottom: 2rem;">
+                    <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-info-circle"></i>
+                        기본 정보
+                    </h4>
+                    
+                    <div style="display: grid; gap: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <span style="color: var(--text-secondary); font-weight: 500; min-width: 100px;">유형:</span>
+                            <span style="background: {{ event.priority_color }}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem;">
+                                <i class="{{ event.type_icon }}" style="margin-right: 0.25rem;"></i>
+                                {{ event.get_event_type_display }}
+                            </span>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <span style="color: var(--text-secondary); font-weight: 500; min-width: 100px;">우선순위:</span>
+                            <span style="background: {{ event.priority_color }}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem;">
+                                {{ event.get_priority_display }}
+                            </span>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <span style="color: var(--text-secondary); font-weight: 500; min-width: 100px;">상태:</span>
+                            <span style="background: {% if event.is_completed %}#10B981{% else %}#6c757d{% endif %}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem;">
+                                <i class="fas fa-{% if event.is_completed %}check{% else %}clock{% endif %}" style="margin-right: 0.25rem;"></i>
+                                {% if event.is_completed %}완료됨{% else %}진행중{% endif %}
+                            </span>
+                        </div>
+                        
+                        {% if event.is_private %}
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <span style="color: var(--text-secondary); font-weight: 500; min-width: 100px;">공개:</span>
+                                <span style="background: #f59e0b; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem;">
+                                    <i class="fas fa-lock" style="margin-right: 0.25rem;"></i>
+                                    비공개
+                                </span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- 설명 -->
+                {% if event.description %}
+                    <div style="margin-bottom: 2rem;">
+                        <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-align-left"></i>
+                            설명
+                        </h4>
+                        <div style="background: var(--sidebar-hover); padding: 1rem; border-radius: 8px; color: var(--text-body); line-height: 1.6;">
+                            {{ event.description|linebreaks }}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- 날짜/시간 정보 -->
+                <div style="margin-bottom: 2rem;">
+                    <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-calendar-alt"></i>
+                        일정 정보
+                    </h4>
+                    
+                    <div style="display: grid; gap: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <span style="color: var(--text-secondary); font-weight: 500; min-width: 100px;">시작:</span>
+                            <span style="color: var(--text-heading);">
+                                {{ event.start_date|date:"Y년 m월 d일" }}
+                                {% if event.start_time %}
+                                    {{ event.start_time|time:"H:i" }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <span style="color: var(--text-secondary); font-weight: 500; min-width: 100px;">종료:</span>
+                            <span style="color: var(--text-heading);">
+                                {{ event.end_date|date:"Y년 m월 d일" }}
+                                {% if event.end_time %}
+                                    {{ event.end_time|time:"H:i" }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <span style="color: var(--text-secondary); font-weight: 500; min-width: 100px;">지속시간:</span>
+                            <span style="color: var(--text-heading);">{{ event.duration }}</span>
+                        </div>
+                        
+                        {% if event.is_all_day %}
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <span style="color: var(--text-secondary); font-weight: 500; min-width: 100px;">종류:</span>
+                                <span style="background: #3b82f6; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem;">
+                                    <i class="fas fa-sun" style="margin-right: 0.25rem;"></i>
+                                    하루 종일
+                                </span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- 위치/링크 정보 -->
+                {% if event.location or event.meeting_link %}
+                    <div style="margin-bottom: 2rem;">
+                        <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-map-marker-alt"></i>
+                            위치 및 링크
+                        </h4>
+                        
+                        <div style="display: grid; gap: 1rem;">
+                            {% if event.location %}
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <span style="color: var(--text-secondary); font-weight: 500; min-width: 100px;">장소:</span>
+                                    <span style="color: var(--text-heading);">
+                                        <i class="fas fa-map-marker-alt" style="margin-right: 0.25rem; color: #ef4444;"></i>
+                                        {{ event.location }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                            
+                            {% if event.meeting_link %}
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <span style="color: var(--text-secondary); font-weight: 500; min-width: 100px;">회의 링크:</span>
+                                    <a href="{{ event.meeting_link }}" target="_blank" 
+                                       style="color: var(--btn-primary-bg); text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+                                        <i class="fas fa-external-link-alt"></i>
+                                        {{ event.meeting_link|truncatechars:50 }}
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- 관련 프로젝트 -->
+                {% if event.related_project %}
+                    <div style="margin-bottom: 2rem;">
+                        <h4 style="color: var(--text-heading); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-project-diagram"></i>
+                            관련 프로젝트
+                        </h4>
+                        
+                        <div style="background: var(--sidebar-hover); padding: 1rem; border-radius: 8px;">
+                            <a href="{% url 'wbs:project_detail' event.related_project.pk %}" 
+                               style="color: var(--btn-primary-bg); text-decoration: none; font-weight: 500;">
+                                <i class="fas fa-project-diagram" style="margin-right: 0.5rem;"></i>
+                                {{ event.related_project.title }}
+                            </a>
+                            {% if event.related_project.description %}
+                                <p style="margin: 0.5rem 0 0 0; color: var(--text-body); font-size: 0.875rem;">
+                                    {{ event.related_project.description|truncatechars:100 }}
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 사이드바 -->
+    <div>
+        <!-- 참석자 정보 -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-users" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                    참석자
+                </h3>
+            </div>
+            <div class="card-body">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                    <div style="width: 32px; height: 32px; background: var(--btn-primary-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 500;">
+                        {{ event.creator.username|first|upper }}
+                    </div>
+                    <div>
+                        <div style="font-weight: 500; color: var(--text-heading);">{{ event.creator.username }}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">생성자</div>
+                    </div>
+                </div>
+                
+                {% if event.attendees.exists %}
+                    <div style="border-top: 1px solid var(--card-border); padding-top: 1rem;">
+                        <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.75rem;">참석자</div>
+                        {% for attendee in event.attendees.all %}
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                <div style="width: 28px; height: 28px; background: var(--sidebar-hover); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-heading); font-weight: 500; font-size: 0.75rem;">
+                                    {{ attendee.username|first|upper }}
+                                </div>
+                                <div style="font-size: 0.875rem; color: var(--text-heading);">{{ attendee.username }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 액션 버튼 -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-cog" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                    액션
+                </h3>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; gap: 0.75rem;">
+                    <button onclick="toggleEventComplete({{ event.pk }})" 
+                            class="btn {% if event.is_completed %}btn-secondary{% else %}btn-success{% endif %}"
+                            style="width: 100%;">
+                        <i class="fas fa-{% if event.is_completed %}undo{% else %}check{% endif %}"></i>
+                        {% if event.is_completed %}완료 취소{% else %}완료 표시{% endif %}
+                    </button>
+                    
+                    <a href="{% url 'wbs:calendar' %}" class="btn btn-outline-primary" style="width: 100%;">
+                        <i class="fas fa-calendar-alt"></i>
+                        캘린더 보기
+                    </a>
+                    
+                    <a href="{% url 'wbs:event_list' %}" class="btn btn-outline-secondary" style="width: 100%;">
+                        <i class="fas fa-list"></i>
+                        일정 목록
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 메타 정보 -->
+        <div class="card" style="margin-top: 1.5rem;">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-info" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                    메타 정보
+                </h3>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; gap: 0.75rem; font-size: 0.875rem;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-secondary);">생성일:</span>
+                        <span style="color: var(--text-heading);">{{ event.created_at|date:"Y-m-d H:i" }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-secondary);">수정일:</span>
+                        <span style="color: var(--text-heading);">{{ event.updated_at|date:"Y-m-d H:i" }}</span>
+                    </div>
+                    {% if event.reminder_minutes > 0 %}
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-secondary);">알림:</span>
+                            <span style="color: var(--text-heading);">{{ event.reminder_minutes }}분 전</span>
+                        </div>
+                    {% endif %}
+                    {% if event.is_recurring %}
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-secondary);">반복:</span>
+                            <span style="color: var(--text-heading);">예</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleEventComplete(eventId) {
+    fetch(`/events/${eventId}/toggle-complete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload(); // 페이지 새로고침으로 상태 반영
+        } else {
+            alert('일정 상태 변경에 실패했습니다.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('일정 상태 변경 중 오류가 발생했습니다.');
+    });
+}
+</script>
+{% endblock %}

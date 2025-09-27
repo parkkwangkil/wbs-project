@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}알림 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}알림{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+    <div class="card">
+        <div class="card-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 class="card-title">
+                    <i class="fas fa-bell" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                    알림
+                    {% if unread_count > 0 %}
+                        <span style="background: #EF4444; color: white; font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 12px; margin-left: 0.5rem;">{{ unread_count }}</span>
+                    {% endif %}
+                </h2>
+                {% if unread_count > 0 %}
+                    <button onclick="markAllAsRead()" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-check-double"></i>
+                        모두 읽음
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            {% if notifications %}
+                <div class="space-y-4">
+                    {% for notification in notifications %}
+                        <div class="notification-item {% if not notification.is_read %}unread{% endif %}" 
+                             style="padding: 1rem; border: 1px solid var(--card-border); border-radius: 8px; {% if not notification.is_read %}background: var(--sidebar-hover); border-left: 4px solid var(--btn-primary-bg);{% endif %}">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                        <i class="fas fa-{% if notification.notification_type == 'project_update' %}project-diagram{% elif notification.notification_type == 'approval_request' %}user-check{% elif notification.notification_type == 'comment_added' %}comment{% elif notification.notification_type == 'deadline_approaching' %}clock{% else %}bell{% endif %}" 
+                                           style="color: {% if notification.notification_type == 'project_update' %}var(--btn-primary-bg){% elif notification.notification_type == 'approval_request' %}#F59E0B{% elif notification.notification_type == 'comment_added' %}#10B981{% elif notification.notification_type == 'deadline_approaching' %}#EF4444{% else %}var(--text-secondary){% endif %};"></i>
+                                        <h3 style="font-weight: 600; color: var(--text-heading); margin: 0;">{{ notification.title }}</h3>
+                                        {% if not notification.is_read %}
+                                            <span style="background: #EF4444; color: white; font-size: 0.625rem; padding: 0.125rem 0.25rem; border-radius: 4px;">NEW</span>
+                                        {% endif %}
+                                    </div>
+                                    <p style="color: var(--text-body); margin: 0 0 0.5rem 0;">{{ notification.message }}</p>
+                                    <div style="display: flex; align-items: center; gap: 1rem; font-size: 0.875rem; color: var(--text-secondary);">
+                                        <span><i class="fas fa-clock"></i> {{ notification.created_at|date:"Y-m-d H:i" }}</span>
+                                        {% if notification.project %}
+                                            <span><i class="fas fa-project-diagram"></i> {{ notification.project.title }}</span>
+                                        {% endif %}
+                                        {% if notification.phase %}
+                                            <span><i class="fas fa-tasks"></i> {{ notification.phase.phase_name }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% if not notification.is_read %}
+                                    <button onclick="markAsRead({{ notification.id }})" class="btn btn-secondary btn-sm" style="margin-left: 1rem;">
+                                        <i class="fas fa-check"></i>
+                                        읽음
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                    <i class="fas fa-bell-slash" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <h3 style="margin-bottom: 0.5rem;">알림이 없습니다</h3>
+                    <p>새로운 알림이 오면 여기에 표시됩니다.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function markAsRead(notificationId) {
+    fetch(`/notifications/${notificationId}/read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+function markAllAsRead() {
+    fetch('/notifications/mark-all-read/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+</script>
+
+<style>
+.space-y-4 > * + * {
+    margin-top: 1rem;
+}
+
+.notification-item {
+    transition: all 0.2s ease;
+}
+
+.notification-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.unread {
+    font-weight: 500;
+}
+</style>
+{% endblock %}
+

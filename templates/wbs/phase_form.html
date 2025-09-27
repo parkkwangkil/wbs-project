@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if form.instance.pk %}단계 편집{% else %}단계 생성{% endif %} - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}{% if form.instance.pk %}단계 편집{% else %}단계 생성{% endif %}{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-{% if form.instance.pk %}edit{% else %}plus{% endif %}" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                {% if form.instance.pk %}단계 편집{% else %}새 단계 생성{% endif %}
+            </h2>
+        </div>
+        <div class="card-body">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Phase Basic Information -->
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.title.id_for_label }}">
+                        <i class="fas fa-tag" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        {{ form.title.label }}
+                    </label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                        <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                            {% for error in form.title.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.description.id_for_label }}">
+                        <i class="fas fa-align-left" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        {{ form.description.label }}
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                            {% for error in form.description.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Phase Timeline -->
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.start_date.id_for_label }}">
+                            <i class="fas fa-calendar-alt" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                            {{ form.start_date.label }}
+                        </label>
+                        {{ form.start_date }}
+                        {% if form.start_date.errors %}
+                            <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                {% for error in form.start_date.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.end_date.id_for_label }}">
+                            <i class="fas fa-calendar-check" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                            {{ form.end_date.label }}
+                        </label>
+                        {{ form.end_date }}
+                        {% if form.end_date.errors %}
+                            <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                {% for error in form.end_date.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Phase Details -->
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.order.id_for_label }}">
+                        <i class="fas fa-sort-numeric-up" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        {{ form.order.label }}
+                    </label>
+                    {{ form.order }}
+                    {% if form.order.errors %}
+                        <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                            {% for error in form.order.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Form Actions -->
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1.5rem; border-top: 1px solid var(--card-border);">
+                    <a href="{% url 'wbs:project_detail' project.pk %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i>
+                        취소
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-{% if form.instance.pk %}save{% else %}plus{% endif %}"></i>
+                        {% if form.instance.pk %}단계 업데이트{% else %}단계 생성{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.space-y-6 > * + * {
+    margin-top: 1.5rem;
+}
+</style>
+{% endblock %}

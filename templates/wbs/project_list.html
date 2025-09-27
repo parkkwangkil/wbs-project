@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}프로젝트 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}프로젝트{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+    <!-- Project List Header -->
+    <div class="card">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 class="card-title">
+                <i class="fas fa-folder-open" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                전체 프로젝트
+            </h2>
+            <a href="{% url 'wbs:project_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                새 프로젝트
+            </a>
+        </div>
+        <div class="card-body">
+            {% if projects %}
+                <div class="grid grid-cols-1 gap-4">
+                    {% for project in projects %}
+                        <div class="card" style="padding: 1.5rem; border: 1px solid var(--card-border);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                                <div style="flex: 1; display: flex; align-items: flex-start; gap: 1rem;">
+                                    <div class="avatar avatar-md {{ project.color_theme }}" style="color: white; flex-shrink: 0;">
+                                        <i class="fas fa-project-diagram"></i>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <h3 style="color: var(--text-heading); font-weight: 600; font-size: 1.25rem; margin-bottom: 0.5rem;">
+                                            {{ project.title }}
+                                        </h3>
+                                        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">
+                                            {{ project.description|truncatewords:30 }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <span class="status-badge status-{{ project.status }}">
+                                    {{ project.get_status_display }}
+                                </span>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                                <div>
+                                    <div style="color: var(--text-secondary); font-size: 0.75rem; font-weight: 500; margin-bottom: 0.25rem;">Manager</div>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <div class="avatar avatar-xs" style="background: var(--btn-primary-bg);">
+                                            {{ project.manager.username|first|upper }}
+                                        </div>
+                                        <span style="color: var(--text-heading); font-size: 0.875rem; font-weight: 500;">{{ project.manager.username }}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-secondary); font-size: 0.75rem; font-weight: 500; margin-bottom: 0.25rem;">Timeline</div>
+                                    <div style="color: var(--text-heading); font-size: 0.875rem;">
+                                        {{ project.start_date }} ~ {{ project.end_date }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-secondary); font-size: 0.75rem; font-weight: 500; margin-bottom: 0.25rem;">Budget</div>
+                                    <div style="color: var(--text-heading); font-size: 0.875rem; font-weight: 500;">
+                                        ${{ project.budget|floatformat:0 }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-secondary); font-size: 0.75rem; font-weight: 500; margin-bottom: 0.25rem;">Priority</div>
+                                    <div style="color: var(--text-heading); font-size: 0.875rem; font-weight: 500;">
+                                        {{ project.get_priority_display }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 1rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                    <span style="color: var(--text-secondary); font-size: 0.75rem; font-weight: 500;">Progress</span>
+                                    <span style="color: var(--text-heading); font-size: 0.75rem; font-weight: 600;">{{ project.progress }}%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: {{ project.progress }}%"></div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                <a href="{% url 'wbs:project_detail' project.pk %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-eye"></i>
+                                        보기
+                                </a>
+                                <a href="{% url 'wbs:project_edit' project.pk %}" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-edit"></i>
+                                    편집
+                                </a>
+                                <a href="{% url 'wbs:progress_calendar' project.pk %}" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-calendar-check"></i>
+                                    진행상황
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);">
+                    <i class="fas fa-project-diagram" style="font-size: 3rem; margin-bottom: 1rem; color: var(--text-disabled);"></i>
+                    <p style="font-size: 1.125rem; margin-bottom: 0.5rem;">프로젝트가 없습니다</p>
+                    <p style="margin-bottom: 1.5rem;">첫 번째 프로젝트를 만들어보세요!</p>
+                    <a href="{% url 'wbs:project_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        프로젝트 생성
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}일정 삭제 확인 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}일정 삭제 확인{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title" style="color: #dc2626;">
+                <i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem;"></i>
+                일정 삭제 확인
+            </h2>
+        </div>
+        <div class="card-body">
+            <div style="text-align: center; padding: 2rem 1rem;">
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: #dc2626; font-size: 2rem;">
+                    <i class="fas fa-trash"></i>
+                </div>
+                
+                <h3 style="color: var(--text-heading); margin: 0 0 1rem 0;">정말로 이 일정을 삭제하시겠습니까?</h3>
+                
+                <div style="background: var(--sidebar-hover); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; text-align: left;">
+                    <h4 style="color: var(--text-heading); margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="{{ event.type_icon }}" style="color: {{ event.priority_color }};"></i>
+                        {{ event.title }}
+                    </h4>
+                    
+                    <div style="display: grid; gap: 0.75rem; font-size: 0.875rem;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-secondary);">유형:</span>
+                            <span style="color: var(--text-heading);">{{ event.get_event_type_display }}</span>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-secondary);">우선순위:</span>
+                            <span style="color: var(--text-heading);">{{ event.get_priority_display }}</span>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-secondary);">시작일:</span>
+                            <span style="color: var(--text-heading);">
+                                {{ event.start_date|date:"Y년 m월 d일" }}
+                                {% if event.start_time %}
+                                    {{ event.start_time|time:"H:i" }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-secondary);">종료일:</span>
+                            <span style="color: var(--text-heading);">
+                                {{ event.end_date|date:"Y년 m월 d일" }}
+                                {% if event.end_time %}
+                                    {{ event.end_time|time:"H:i" }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        {% if event.location %}
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-secondary);">장소:</span>
+                                <span style="color: var(--text-heading);">{{ event.location }}</span>
+                            </div>
+                        {% endif %}
+                        
+                        {% if event.attendees.exists %}
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-secondary);">참석자:</span>
+                                <span style="color: var(--text-heading);">
+                                    {% for attendee in event.attendees.all %}
+                                        {{ attendee.username }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div style="background: #fef3c7; border: 1px solid #fbbf24; color: #92400e; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; text-align: left;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>주의사항</strong>
+                    </div>
+                    <ul style="margin: 0; padding-left: 1.5rem; font-size: 0.875rem;">
+                        <li>삭제된 일정은 복구할 수 없습니다.</li>
+                        <li>참석자들에게 일정 삭제 알림이 전송됩니다.</li>
+                        <li>관련 프로젝트와의 연결이 해제됩니다.</li>
+                    </ul>
+                </div>
+                
+                <form method="post" style="display: flex; gap: 1rem; justify-content: center;">
+                    {% csrf_token %}
+                    <a href="{% url 'wbs:event_detail' event.pk %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        취소
+                    </a>
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')">
+                        <i class="fas fa-trash"></i>
+                        삭제
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
