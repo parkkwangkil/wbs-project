@@ -44,6 +44,20 @@
                     {% endif %}
                 </div>
 
+                <!-- Team -->
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.team_name.id_for_label }}">
+                        <i class="fas fa-users" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        {{ form.team_name.label }}
+                    </label>
+                    {{ form.team_name }}
+                    {% if form.team_name.errors %}
+                        <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                            {% for error in form.team_name.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
                 <!-- Phase Timeline -->
                 <div class="grid grid-cols-2 gap-6">
                     <div class="form-group">
@@ -73,16 +87,68 @@
                     </div>
                 </div>
 
-                <!-- Phase Details -->
+                <!-- Hours / Status / Progress / Order -->
+                <div class="grid grid-cols-4 gap-6">
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.daily_hours.id_for_label }}">
+                            <i class="fas fa-clock" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                            {{ form.daily_hours.label }}
+                        </label>
+                        {{ form.daily_hours }}
+                        {% if form.daily_hours.errors %}
+                            <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                {% for error in form.daily_hours.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.status.id_for_label }}">
+                            <i class="fas fa-stream" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                            {{ form.status.label }}
+                        </label>
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                            <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                {% for error in form.status.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.progress.id_for_label }}">
+                            <i class="fas fa-percent" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                            {{ form.progress.label }}
+                        </label>
+                        {{ form.progress }}
+                        {% if form.progress.errors %}
+                            <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                {% for error in form.progress.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.order.id_for_label }}">
+                            <i class="fas fa-sort-numeric-up" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                            {{ form.order.label }}
+                        </label>
+                        {{ form.order }}
+                        {% if form.order.errors %}
+                            <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                                {% for error in form.order.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Assignees (move to bottom) -->
                 <div class="form-group">
-                    <label class="form-label" for="{{ form.order.id_for_label }}">
-                        <i class="fas fa-sort-numeric-up" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
-                        {{ form.order.label }}
+                    <label class="form-label" for="{{ form.assignees.id_for_label }}">
+                        <i class="fas fa-user-check" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        {{ form.assignees.label }}
                     </label>
-                    {{ form.order }}
-                    {% if form.order.errors %}
+                    <div class="assignees-row">{{ form.assignees }}</div>
+                    {% if form.assignees.errors %}
                         <div style="color: #EF4444; font-size: 0.875rem; margin-top: 0.25rem;">
-                            {% for error in form.order.errors %}{{ error }}{% endfor %}
+                            {% for error in form.assignees.errors %}{{ error }}{% endfor %}
                         </div>
                     {% endif %}
                 </div>
@@ -107,5 +173,11 @@
 .space-y-6 > * + * {
     margin-top: 1.5rem;
 }
+.assignees-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1rem;
+}
+.assignees-row label { display:flex; align-items:center; gap:.4rem; min-width: 220px; }
 </style>
 {% endblock %}

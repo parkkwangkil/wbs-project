@@ -12,13 +12,10 @@
         개인 프로젝트형 일정표 ({{ start_date|date:'Y-m-d' }} ~ {{ end_date|date:'Y-m-d' }})
       </h2>
       <div style="display:flex;gap:.5rem;align-items:center;">
-        <div class="btn-group" role="group" aria-label="mode">
-          <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_planner' %}?mode=week&start={{ start_date|date:'Y-m-d' }}" {% if mode == 'week' %}style="background: var(--btn-primary-bg); color: #fff;"{% endif %}>주간</a>
-          <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_planner' %}?mode=month&start={{ start_date|date:'Y-m-d' }}" {% if mode == 'month' %}style="background: var(--btn-primary-bg); color: #fff;"{% endif %}>월간</a>
-        </div>
-        <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_planner' %}?mode={{ mode }}&start={{ prev_start }}"><i class="fas fa-chevron-left"></i></a>
-        <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_planner' %}?mode={{ mode }}&start={{ next_start }}"><i class="fas fa-chevron-right"></i></a>
-        <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_planner' %}?mode={{ mode }}"><i class="fas fa-sync"></i> 새로고침</a>
+        <span class="btn btn-primary btn-sm" aria-current="true">주간</span>
+        <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_planner' %}?start={{ prev_start }}"><i class="fas fa-chevron-left"></i></a>
+        <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_planner' %}?start={{ next_start }}"><i class="fas fa-chevron-right"></i></a>
+        <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_planner' %}"><i class="fas fa-sync"></i> 새로고침</a>
         <a class="btn btn-primary btn-sm" href="{% url 'wbs:event_create' %}"><i class="fas fa-plus"></i> 새 일정</a>
       </div>
     </div>
@@ -68,7 +65,7 @@
               <!-- 타임라인 헤더 일자 -->
               <div class="right-grid" id="gridHeader" style="height: 28px; overflow: hidden;">
                 {% for dp in days_with_pos %}
-                  <div class="grid-cell" style="left: {{ dp.1 }}px; width: {{ px_per_day }}px; text-align:center; font-weight:600; color: var(--text-secondary);">
+                  <div class="grid-cell" style="left: {{ dp.1 }}px; width: {{ px_per_day }}px; text-align:center; font-weight:700; color: var(--text-heading);">
                     {{ dp.0|date:'m/d' }}
                   </div>
                 {% endfor %}

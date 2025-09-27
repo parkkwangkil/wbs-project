@@ -29,6 +29,7 @@
                 </div>
             </div>
             <div style="display: flex; gap: 0.5rem;">
+                {% if user.is_staff or user.id == project.manager_id %}
                 <a href="{% url 'wbs:project_edit' project.pk %}" class="btn btn-secondary btn-sm">
                     <i class="fas fa-edit"></i>
                     Edit
@@ -40,6 +41,7 @@
                         Delete
                     </button>
                 </form>
+                {% endif %}
                 <a href="{% url 'wbs:project_planner' project.pk %}" class="btn btn-secondary btn-sm">
                     <i class="fas fa-table"></i>
                     Planner
@@ -51,6 +53,15 @@
             </div>
         </div>
         <div class="card-body">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+                <div style="font-weight:700;color:var(--text-heading);">
+                    주간: {{ week_start|date:'m/d' }} - {{ week_end|date:'m/d' }}
+                </div>
+                <div style="display:flex;gap:.5rem;">
+                    <a class="btn btn-secondary btn-sm" href="{% url 'wbs:project_detail' project.pk %}?week={{ prev_week }}">이전 주</a>
+                    <a class="btn btn-secondary btn-sm" href="{% url 'wbs:project_detail' project.pk %}?week={{ next_week }}">다음 주</a>
+                </div>
+            </div>
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
                 <!-- Project Description -->
                 <div>
@@ -71,62 +82,64 @@
                                 <div class="progress-fill" style="width: {{ project.progress }}%"></div>
                             </div>
                         </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                            <div>
-                                <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.25rem;">Budget</div>
-                                <div style="color: var(--text-heading); font-weight: 600;">${{ project.budget|floatformat:0 }}</div>
-                            </div>
-                            <div>
-                                <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.25rem;">Priority</div>
-                                <div style="color: var(--text-heading); font-weight: 600;">{{ project.get_priority_display }}</div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- WBS Table (single project) -->
+    <!-- WBS Table (weekly) -->
     <div class="card">
-        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-            <h2 class="card-title"><i class="fas fa-sitemap" style="margin-right:.5rem;color:var(--text-secondary);"></i>WBS</h2>
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;">
+            <div style="display:flex;align-items:center;gap:.75rem;">
+                <h2 class="card-title" style="margin:0;display:flex;align-items:center;gap:.5rem;"><i class="fas fa-sitemap" style="color:var(--text-secondary);"></i>WBS</h2>
+                <div style="color:var(--text-heading);font-weight:700;">({{ week_start|date:'m/d' }} - {{ week_end|date:'m/d' }})</div>
+                <div style="display:flex;gap:.5rem;align-items:center;">
+                    <span class="btn btn-primary btn-sm" aria-current="true">주간</span>
+                    <span class="btn btn-secondary btn-sm" style="opacity:.6;pointer-events:none;">월간</span>
+                </div>
+            </div>
+            <div style="display:flex;gap:.5rem;align-items:center;">
+                <a class="btn btn-secondary btn-sm" href="{% url 'wbs:project_detail' project.pk %}?week={{ prev_week }}" title="이전 주"><i class="fas fa-chevron-left"></i></a>
+                <a class="btn btn-secondary btn-sm" href="{% url 'wbs:project_detail' project.pk %}?week={{ next_week }}" title="다음 주"><i class="fas fa-chevron-right"></i></a>
+                <a class="btn btn-secondary btn-sm" href="{% url 'wbs:project_detail' project.pk %}?week={{ week_start|date:'Y-m-d' }}" title="새로고침"><i class="fas fa-sync-alt"></i> 새로고침</a>
+            </div>
         </div>
         <div class="card-body">
             <style>
                 .wbs thead th{background:var(--sidebar-hover);color:var(--text-heading);font-weight:700;padding:.5rem;border:1px solid var(--card-border)}
                 .wbs tbody td{padding:.5rem;border:1px solid var(--card-border);vertical-align:middle;font-size:.9rem}
                 .wbs tbody tr:nth-child(odd) td{background:var(--bg-surface)}
-                .right-grid{position:relative;min-height:28px}
-                .right-grid .grid-cell{position:absolute;top:0;height:28px;border-right:1px solid var(--card-border);color:var(--text-secondary);font-size:12px;display:flex;align-items:center;justify-content:center}
+                .right-grid{position:relative;min-height:28px;overflow:hidden}
                 .grid-bar{position:absolute;top:4px;height:20px;border-radius:10px;color:#fff;font-size:12px;display:flex;align-items:center;padding:0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 6px 16px rgba(0,0,0,.12);border:1px solid rgba(0,0,0,.06)}
-                .grid-bar::after{content:"";position:absolute;right:-5px;top:5px;width:10px;height:10px;transform:rotate(45deg);border-radius:2px;background:currentColor;opacity:.85}
             </style>
-
-            {% with px_per_day=px_per_day %}
 
             <table class="wbs" style="width:100%;border-collapse:separate;border-spacing:0;">
                 <colgroup>
+                    <col style="width: 140px;">
+                    <col style="width: 260px;">
                     <col style="width: 120px;">
-                    <col style="width: 240px;">
+                    <col style="width: 160px;">
+                    <col style="width: 100px;"> <!-- 상태 -->
                     <col style="width: 100px;">
-                    <col style="width: 120px;">
-                    <col style="width: 120px;">
-                    <col style="width: 90px;">
+                    <col style="width: 100px;">
+                    <col style="width: 80px;">
                     <col>
                 </colgroup>
                 <thead>
                     <tr>
                         <th>항목</th>
                         <th>내용</th>
-                        <th>파트</th>
-                        <th>작업자</th>
+                        <th>팀</th>
+                        <th>담당자</th>
+                        <th>상태</th>
                         <th>시작일</th>
                         <th>종료일</th>
+                        <th>시간(h)</th>
                         <th>
-                            <div class="right-grid" style="height:28px;overflow:hidden;position:relative;background-image:repeating-linear-gradient(to right,var(--card-border),var(--card-border) 1px,transparent 1px,transparent 40px)">
-                                {% for d in days %}
+                            <div class="right-grid" style="height:28px;display:grid;grid-template-columns:repeat(7, {{ px_per_day }}px);">
+                                {% for d in week_days %}
+                                <div style="border-right:1px solid var(--card-border);text-align:center;color:var(--text-secondary);font-weight:600;">{{ d|date:'m/d' }}</div>
                                 {% endfor %}
                             </div>
                         </th>
@@ -137,32 +150,26 @@
                         <tr>
                             <td>{{ r.title }}</td>
                             <td>{{ r.description|default:'-' }}</td>
-                            <td>{{ r.part|default:'-' }}</td>
+                            <td>{{ r.team|default:'-' }}</td>
                             <td>{{ r.owner }}</td>
+                            <td>{% if r.status == 'planned' %}계획{% elif r.status == 'in_progress' %}진행중{% elif r.status == 'blocked' %}보류{% elif r.status == 'done' %}완료{% else %}{{ r.status }}{% endif %}</td>
                             <td>{{ r.start_date }}</td>
                             <td>{{ r.end_date }}</td>
+                            <td style="text-align:right;">{{ r.daily_hours }}</td>
                             <td>
-                                <div class="right-grid" style="height:28px;overflow:hidden;position:relative;background-image:repeating-linear-gradient(to right,var(--card-border),var(--card-border) 1px,transparent 1px,transparent 40px)">
+                                <div class="right-grid" style="height:28px;display:grid;grid-template-columns:repeat(7, {{ px_per_day }}px); position:relative;">
                                     <div class="grid-bar" style="left: {{ r.left }}px; width: {{ r.width }}px; background: {{ project.theme_color }};">{{ r.title }}</div>
                                 </div>
                             </td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:1rem;">단계가 없습니다. 상단에서 단계를 추가하세요.</td></tr>
+                        <tr><td colspan="8" style="text-align:center;color:var(--text-secondary);padding:1rem;">단계가 없습니다. 우측 상단의 '단계 추가'를 눌러 추가하세요.</td></tr>
                     {% endfor %}
                 </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="4" style="text-align:right;color:#c2410c;font-weight:700;">전체일정</td>
-                        <td style="color:#c2410c;font-weight:700;">{{ project.start_date }}</td>
-                        <td style="color:#c2410c;font-weight:700;">{{ project.end_date }}</td>
-                        <td style="color:#c2410c;font-weight:700;">{{ project.progress }}%</td>
-                    </tr>
-                </tfoot>
             </table>
-            {% endwith %}
         </div>
     </div>
+
     <!-- Project Phases -->
     <div class="card">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -183,28 +190,32 @@
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
                                 <div style="flex: 1;">
                                     <h3 style="color: var(--text-heading); font-weight: 600; font-size: 1rem; margin-bottom: 0.25rem;">
-                                        {{ phase.phase_name }}
+                                        {{ phase.title }}
                                     </h3>
                                     <p style="color: var(--text-secondary); font-size: 0.875rem;">
                                         {{ phase.description|truncatewords:20 }}
                                     </p>
                                 </div>
                                 <span class="status-badge status-{{ phase.status }}">
-                                    {{ phase.get_status_display }}
+                                    {{ phase.get_status_display|default:phase.status }}
                                 </span>
                             </div>
 
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 0.75rem;">
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 0.75rem;">
                                 <div>
-                                    <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.25rem;">Start Date</div>
-                                    <div style="color: var(--text-heading); font-size: 0.875rem;">{{ phase.start_date }}</div>
+                                    <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.25rem;">팀</div>
+                                    <div style="color: var(--text-heading); font-size: 0.875rem;">{{ phase.team_name|default:'-' }}</div>
                                 </div>
                                 <div>
-                                    <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.25rem;">End Date</div>
-                                    <div style="color: var(--text-heading); font-size: 0.875rem;">{{ phase.end_date }}</div>
+                                    <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.25rem;">담당자</div>
+                                    <div style="color: var(--text-heading); font-size: 0.875rem;">{% for u in phase.assignees.all %}{% if not forloop.first %}, {% endif %}{{ u.username }}{% empty %}-{% endfor %}</div>
                                 </div>
                                 <div>
-                                    <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.25rem;">Progress</div>
+                                    <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.25rem;">시간(h)</div>
+                                    <div style="color: var(--text-heading); font-size: 0.875rem;">{{ phase.daily_hours }}</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.25rem;">진행률</div>
                                     <div style="color: var(--text-heading); font-size: 0.875rem; font-weight: 600;">{{ phase.progress }}%</div>
                                 </div>
                             </div>
@@ -226,60 +237,6 @@
                         <i class="fas fa-plus"></i>
                         Add First Phase
                     </a>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Comments Section -->
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">
-                <i class="fas fa-comments" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
-                Comments
-            </h2>
-        </div>
-        <div class="card-body">
-            <!-- Add Comment Form -->
-            <form method="post" style="margin-bottom: 2rem;">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="add_comment">
-                <div class="form-group">
-                    <label class="form-label" for="comment_text">Add Comment</label>
-                    <textarea name="comment_text" class="form-control" rows="3" placeholder="Write your comment here..."></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-comment"></i>
-                    Add Comment
-                </button>
-            </form>
-
-            <!-- Comments List -->
-            {% if project.comments.all %}
-                <div style="display: flex; flex-direction: column; gap: 1rem;">
-                    {% for comment in project.comments.all %}
-                        <div class="card" style="padding: 1rem; border: 1px solid var(--card-border);">
-                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-                                <div class="avatar avatar-sm" style="background: var(--btn-primary-bg);">
-                                    {{ comment.author.username|first|upper }}
-                                </div>
-                                <div>
-                                    <div style="color: var(--text-heading); font-weight: 500; font-size: 0.875rem;">
-                                        {{ comment.author.username }}
-                                    </div>
-                                    <div style="color: var(--text-secondary); font-size: 0.75rem;">
-                                        {{ comment.created_at|date:"M d, Y H:i" }}
-                                    </div>
-                                </div>
-                            </div>
-                            <p style="color: var(--text-body); line-height: 1.5;">{{ comment.content }}</p>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div style="text-align: center; padding: 2rem 1rem; color: var(--text-secondary);">
-                    <i class="fas fa-comments" style="font-size: 2rem; margin-bottom: 1rem; color: var(--text-disabled);"></i>
-                    <p>No comments yet. Be the first to comment!</p>
                 </div>
             {% endif %}
         </div>

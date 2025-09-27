@@ -1,12 +1,12 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.db import models
-from .models import Project, ProjectPhase, Comment, DailyProgress, TaskChecklistItem, UserProfile, SubscriptionPlan, UserSubscription, AdCampaign, Event
+from .models import Project, ProjectPhase, Comment, DailyProgress, TaskChecklistItem, UserProfile, SubscriptionPlan, UserSubscription, AdCampaign, Event, PersonalTask
 
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
-        fields = ['title', 'description', 'start_date', 'end_date', 'status', 'priority', 'budget', 'color_theme', 'tl', 'team_members']
+        fields = ['title', 'description', 'start_date', 'end_date', 'status', 'priority', 'color_theme', 'tl', 'team_members', 'is_personal_project', 'is_team_project']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
@@ -14,21 +14,31 @@ class ProjectForm(forms.ModelForm):
             'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'status': forms.Select(attrs={'class': 'form-control'}),
             'priority': forms.Select(attrs={'class': 'form-control'}),
-            'budget': forms.NumberInput(attrs={'class': 'form-control'}),
             'color_theme': forms.Select(attrs={'class': 'form-control'}),
             'tl': forms.Select(attrs={'class': 'form-control'}),
-            'team_members': forms.SelectMultiple(attrs={'class': 'form-control'}),
+            'team_members': forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+            'is_personal_project': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_team_project': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
 class ProjectPhaseForm(forms.ModelForm):
     class Meta:
         model = ProjectPhase
-        fields = ['title', 'description', 'start_date', 'end_date', 'order']
+        fields = ['title', 'description', 'team_name', 'assignees', 'start_date', 'end_date', 'daily_hours', 'status', 'progress', 'order']
+        labels = {
+            'title': '항목',
+            'description': '내용',
+        }
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'team_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '예: 인프라팀'}),
+            'assignees': forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
             'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'daily_hours': forms.Select(choices=[(i, f"{i}") for i in range(1,9)], attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'progress': forms.NumberInput(attrs={'class': 'form-control', 'min':0, 'max':100}),
             'order': forms.NumberInput(attrs={'class': 'form-control'}),
         }
     
@@ -118,12 +128,14 @@ class UserProfileForm(forms.ModelForm):
     """사용자 프로필 폼"""
     class Meta:
         model = UserProfile
-        fields = ['bio', 'phone', 'department', 'position', 'avatar', 'birth_date', 'location', 'website']
+        fields = ['company', 'team', 'position', 'department', 'bio', 'phone', 'avatar', 'birth_date', 'location', 'website']
         widgets = {
+            'company': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '회사명'}),
+            'team': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '팀명'}),
+            'position': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '직책'}),
+            'department': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '부서'}),
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': '자기소개를 입력하세요...'}),
             'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '010-1234-5678'}),
-            'department': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '개발팀'}),
-            'position': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '팀장'}),
             'avatar': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
             'birth_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '서울, 대한민국'}),
@@ -250,3 +262,19 @@ class EventAttendeesForm(forms.Form):
         # 현재 사용자 제외
         if user:
             self.fields['attendees'].queryset = User.objects.exclude(id=user.id)
+
+
+class PersonalTaskForm(forms.ModelForm):
+    """개인 프로젝트 작업 추가 폼"""
+    class Meta:
+        model = PersonalTask
+        fields = ['team_name', 'content', 'assignees', 'start_date', 'end_date', 'progress', 'daily_hours']
+        widgets = {
+            'team_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '예: 디자인팀'}),
+            'content': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '작업 내용을 입력하세요'}),
+            'assignees': forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+            'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'progress': forms.Select(attrs={'class': 'form-control'}),
+            'daily_hours': forms.Select(choices=[(i, f"{i}") for i in range(1, 9)], attrs={'class': 'form-control'}),
+        }

@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}개인 프로젝트 - {{ project.title }}{% endblock %}
+{% block page_title %}{{ project.title }} · 개인 프로젝트{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+  <div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <h2 class="card-title" style="display:flex;align-items:center;gap:.5rem;">
+        <i class="fas fa-table" style="color: var(--text-secondary);"></i>
+        개인 프로젝트 ({{ start_date|date:'Y-m-d' }} ~ {{ end_date|date:'Y-m-d' }})
+      </h2>
+      <div style="display:flex;gap:.5rem;align-items:center;">
+        <div class="btn-group" role="group" aria-label="mode">
+          <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_project_detail' project.pk %}?mode=week&start={{ start_date|date:'Y-m-d' }}" {% if mode == 'week' %}style="background: var(--btn-primary-bg); color: #fff;"{% endif %}>주간</a>
+          <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_project_detail' project.pk %}?mode=month&start={{ start_date|date:'Y-m-d' }}" {% if mode == 'month' %}style="background: var(--btn-primary-bg); color: #fff;"{% endif %}>월간</a>
+        </div>
+        <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_project_detail' project.pk %}?mode={{ mode }}&start={{ prev_start }}"><i class="fas fa-chevron-left"></i></a>
+        <a class="btn btn-secondary btn-sm" href="{% url 'wbs:personal_project_detail' project.pk %}?mode={{ mode }}&start={{ next_start }}"><i class="fas fa-chevron-right"></i></a>
+        <a class="btn btn-primary btn-sm" href="{% url 'wbs:personal_task_add' project.pk %}"><i class="fas fa-plus"></i> 항목 추가</a>
+      </div>
+    </div>
+    <div class="card-body">
+      <style>
+        .planner { width: 100%; border-collapse: collapse; }
+        .planner th, .planner td { border:1px solid var(--card-border); padding: .5rem; font-size: 0.875rem; }
+        .planner thead th { background: var(--sidebar-hover); color: var(--text-heading); text-align: center; }
+        .right-grid { position: relative; min-width: 720px; }
+        .grid-row { position: relative; height: 28px; border-bottom: 1px solid var(--card-border); }
+        .grid-cell { position: absolute; top:0; bottom:0; border-right:1px solid var(--card-border); }
+        .grid-bar { position: absolute; top:4px; height:20px; border-radius: 6px; color:#fff; display:flex; align-items:center; padding: 0 8px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ppd-week { display:grid; grid-template-columns: repeat(7, var(--ppd-day-px)); }
+      </style>
+
+      <table class="planner">
+        <colgroup>
+          <col style="width: 100px;">
+          <col style="width: 260px;">
+          <col style="width: 120px;">
+          <col style="width: 160px;">
+          <col style="width: 120px;">
+          <col style="width: 120px;">
+          <col style="width: 100px;">
+          <col>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>항목</th>
+            <th>내용</th>
+            <th>담당자</th>
+            <th>진행상태</th>
+            <th>시작일</th>
+            <th>종료일</th>
+            <th>기간</th>
+            <th>
+              <style>
+                .ppd-month { display:flex; flex-direction:column; gap:2px; }
+                .ppd-month .weeks { display:flex; }
+                .ppd-month .days { display:flex; }
+                .ppd-month .week-cell { width: var(--week-px); display:flex; align-items:center; justify-content:center; color: var(--text-secondary); font-weight:600; border-right:1px solid var(--card-border); height:20px; }
+                .ppd-month .day-cell { width: var(--px-per-day); display:flex; align-items:center; justify-content:center; color: var(--text-secondary); font-weight:600; letter-spacing:.2px; border-right:1px solid var(--card-border); height:28px; }
+                .ppd-month .week-sep { border-left:2px solid var(--text-heading); }
+                .ppd-month .day-cell:last-child, .ppd-month .week-cell:last-child { border-right:0; }
+              </style>
+              <div class="right-grid ppd-month" style="--week-px: {{ week_px }}px; --px-per-day: {{ px_per_day }}px;">
+                {% if mode == 'month' %}
+                  <div class="weeks">
+                    {% for w in week_cells %}
+                      <div class="week-cell">{{ w.label }}</div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <div class="days">
+                  {% for dp in days_with_pos %}
+                    <div class="day-cell{% if forloop.counter0|divisibleby:7 and not forloop.first %} week-sep{% endif %}">{{ dp.0|date:'d' }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+            <tr>
+              <td>{{ r.category }}</td>
+              <td>{{ r.title }}</td>
+              <td>{{ r.owner }}</td>
+              <td>{{ r.progress }}</td>
+              <td>{{ r.start|date:'Y-m-d' }}</td>
+              <td>{{ r.end|date:'Y-m-d' }}</td>
+              <td style="text-align:right;">{{ r.days }}</td>
+              <td>
+                {% if mode == 'week' %}
+                <div class="right-grid" style="height:28px; display:grid; grid-template-columns: repeat(7, {{ px_per_day }}px);">
+                  <div class="grid-bar" style="grid-column: {{ r.grid_col_start }} / span {{ r.grid_span }}; background: {{ r.color }};">{{ r.title }}</div>
+                </div>
+                {% else %}
+                <div class="right-grid" style="height: 28px; overflow: hidden;">
+                  <div class="grid-bar" style="left: {{ r.left }}px; width: {{ r.width }}px; background: {{ r.color }};">{{ r.title }}</div>
+                </div>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="8" style="text-align:center; color: var(--text-secondary); padding: 1rem;">표시할 항목이 없습니다. 우측 상단의 '항목 추가'를 눌러 추가하세요.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

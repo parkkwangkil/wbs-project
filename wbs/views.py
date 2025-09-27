@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.db.models import Q, F
 from .models import Project, ProjectPhase, ApprovalLine, Comment, ProjectDocument, DailyProgress, TaskChecklistItem, UserProfile, Notification, SubscriptionPlan, UserSubscription, AdCampaign, Event
-from .forms import ProjectForm, ProjectPhaseForm, CommentForm, DailyProgressForm, TaskChecklistItemForm, UserProfileForm, UserForm, SubscriptionPlanForm, UserSubscriptionForm, AdCampaignForm, EventForm, EventAttendeesForm
+from .forms import ProjectForm, ProjectPhaseForm, CommentForm, DailyProgressForm, TaskChecklistItemForm, UserProfileForm, UserForm, SubscriptionPlanForm, UserSubscriptionForm, AdCampaignForm, EventForm, EventAttendeesForm, PersonalTaskForm
 from datetime import datetime, timedelta, date
 import json
 
@@ -86,7 +86,8 @@ def project_list(request):
 def team_projects(request):
     """내가 관리하거나 참여 중인 팀 프로젝트 목록"""
     projects = Project.objects.filter(
-        Q(manager=request.user) | Q(team_members=request.user)
+        Q(manager=request.user) | Q(team_members=request.user),
+        is_team_project=True
     ).distinct().order_by('-updated_at', '-created_at')
 
     # id 쿼리 파라미터가 오면 해당 프로젝트 상세로 이동 (권한 확인)
@@ -105,6 +106,25 @@ def team_projects(request):
 
     # 없으면 안내 리스트 페이지 표시
     return render(request, 'wbs/team_projects.html', {'projects': projects})
+
+@login_required
+def personal_projects(request):
+    """내가 관리하는 개인 프로젝트 목록 (팀과 별개)"""
+    projects = Project.objects.filter(manager=request.user, is_personal_project=True).order_by('-updated_at', '-created_at')
+
+    target_id = request.GET.get('id')
+    if target_id:
+        try:
+            target = projects.get(pk=target_id)
+            return redirect('wbs:project_detail', pk=target.pk)
+        except Project.DoesNotExist:
+            pass
+
+    first_project = projects.first()
+    if first_project:
+        return redirect('wbs:project_detail', pk=first_project.pk)
+
+    return render(request, 'wbs/personal_projects.html', {'projects': projects})
 
 def project_detail(request, pk):
     """프로젝트 상세"""
@@ -126,24 +146,42 @@ def project_detail(request, pk):
         form = CommentForm()
     
     # 타임라인 바 위치(좌표) 사전 계산
-    px_per_day = 40
+    # 주간 전용: 기준 주(월~일) 계산 (쿼리스트링 week=YYYY-MM-DD 지원)
+    base_str = request.GET.get('week')
+    try:
+        base_date = datetime.strptime(base_str, '%Y-%m-%d').date() if base_str else timezone.localdate()
+    except Exception:
+        base_date = timezone.localdate()
+    week_start = base_date - timedelta(days=base_date.weekday())
+    week_end = week_start + timedelta(days=6)
+    px_per_day = 100
     phase_rows = []
     for ph in phases:
-        start = max(ph.start_date, project.start_date)
-        end = max(start, min(ph.end_date, project.end_date))
-        left = (start - project.start_date).days * px_per_day
+        # 주간과 겹치지 않으면 표시하지 않음
+        if ph.end_date < week_start or ph.start_date > week_end:
+            continue
+        start = max(ph.start_date, week_start)
+        end = min(ph.end_date, week_end)
+        left = (start - week_start).days * px_per_day
         width = ((end - start).days + 1) * px_per_day
+        owners = ", ".join(u.username for u in getattr(ph, 'assignees', []).all()) if hasattr(ph, 'assignees') else project.manager.username
         phase_rows.append({
             'id': ph.id,
             'title': ph.title,
             'description': getattr(ph, 'description', ''),
+            'team': getattr(ph, 'team_name', ''),
+            'daily_hours': getattr(ph, 'daily_hours', 8),
+            'status': getattr(ph, 'status', 'planned'),
+            'progress': getattr(ph, 'progress', 0),
             'start_date': ph.start_date,
             'end_date': ph.end_date,
-            'owner': project.manager.username,
-            'part': getattr(project, 'priority', ''),
+            'owner': owners or project.manager.username,
+            'part': getattr(ph, 'team_name', ''),
             'left': left,
             'width': width,
         })
+
+    # 개인 작업은 주간 WBS에서 제외
 
     context = {
         'project': project,
@@ -153,9 +191,30 @@ def project_detail(request, pk):
         'documents': documents,
         'form': form,
         'px_per_day': px_per_day,
+        'week_start': week_start,
+        'week_end': week_end,
+        'prev_week': (week_start - timedelta(days=7)).strftime('%Y-%m-%d'),
+        'next_week': (week_start + timedelta(days=7)).strftime('%Y-%m-%d'),
+        'week_days': [(week_start + timedelta(days=i)) for i in range(7)],
     }
     
     return render(request, 'wbs/project_detail.html', context)
+
+@login_required
+def personal_task_add(request, project_pk):
+    project = get_object_or_404(Project, pk=project_pk)
+    if request.method == 'POST':
+        form = PersonalTaskForm(request.POST)
+        if form.is_valid():
+            pt = form.save(commit=False)
+            pt.project = project
+            pt.save()
+            form.save_m2m()
+            messages.success(request, '작업 항목이 추가되었습니다.')
+            return redirect('wbs:project_detail', pk=project_pk)
+    else:
+        form = PersonalTaskForm()
+    return render(request, 'wbs/personal_task_form.html', { 'form': form, 'project': project })
 
 def project_create(request):
     """프로젝트 생성"""
@@ -207,6 +266,11 @@ def project_edit(request, pk):
 def project_delete(request, pk):
     """프로젝트 삭제 확인 및 처리"""
     project = get_object_or_404(Project, pk=pk)
+    # 권한 체크: 관리자 또는 프로젝트 매니저만 삭제 가능
+    if not (request.user.is_staff or request.user == project.manager):
+        messages.error(request, '삭제 권한이 없습니다.')
+        next_url = request.POST.get('next') or request.GET.get('next') or reverse('wbs:project_detail', args=[pk])
+        return redirect(next_url)
     if request.method == 'POST' or request.GET.get('confirm') == '1':
         title = project.title
         project.delete()
@@ -724,23 +788,27 @@ def event_list(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def event_create(request):
+    attendees_form = None
     if request.method == 'POST':
         form = EventForm(request.POST, user=request.user)
-        if form.is_valid():
+        attendees_form = EventAttendeesForm(request.POST, user=request.user)
+        if form.is_valid() and attendees_form.is_valid():
             event = form.save(commit=False)
             event.creator = request.user
             event.end_date = event.end_date or event.start_date
             event.save()
             form.save_m2m()
+            event.attendees.set(attendees_form.cleaned_data.get('attendees'))
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'success': True, 'id': event.id})
             messages.success(request, '일정이 생성되었습니다.')
-            return redirect('wbs:calendar')
+            return redirect('wbs:event_detail', pk=event.pk)
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+            return JsonResponse({'success': False, 'errors': {**form.errors, **attendees_form.errors}}, status=400)
     else:
         form = EventForm(user=request.user)
-    return render(request, 'wbs/event_form.html', {'form': form})
+        attendees_form = EventAttendeesForm(user=request.user)
+    return render(request, 'wbs/event_form.html', {'form': form, 'attendees_form': attendees_form, 'title': '새 일정 생성'})
 
 @login_required
 def event_detail(request, pk):
@@ -751,15 +819,19 @@ def event_detail(request, pk):
 @require_http_methods(["GET", "POST"])
 def event_edit(request, pk):
     event = get_object_or_404(Event, pk=pk)
+    attendees_form = None
     if request.method == 'POST':
         form = EventForm(request.POST, instance=event, user=request.user)
-        if form.is_valid():
+        attendees_form = EventAttendeesForm(request.POST, user=request.user)
+        if form.is_valid() and attendees_form.is_valid():
             form.save()
+            event.attendees.set(attendees_form.cleaned_data.get('attendees'))
             messages.success(request, '일정이 수정되었습니다.')
             return redirect('wbs:event_detail', pk=pk)
     else:
         form = EventForm(instance=event, user=request.user)
-    return render(request, 'wbs/event_form.html', {'form': form, 'event': event})
+        attendees_form = EventAttendeesForm(user=request.user, initial={'attendees': event.attendees.all()})
+    return render(request, 'wbs/event_form.html', {'form': form, 'attendees_form': attendees_form, 'event': event, 'title': '일정 수정'})
 
 @login_required
 @require_http_methods(["GET", "POST"])
@@ -812,23 +884,18 @@ def event_range_selector(request):
 # ----- 개인 플래너 / 프로젝트 플래너 -----
 @login_required
 def personal_planner(request):
-    mode = request.GET.get('mode', 'week')
+    # 주간 전용
+    mode = 'week'
     try:
         start_str = request.GET.get('start')
         base_date = datetime.strptime(start_str, '%Y-%m-%d').date() if start_str else timezone.localdate()
     except Exception:
         base_date = timezone.localdate()
 
-    if mode == 'month':
-        start_date = base_date.replace(day=1)
-        from calendar import monthrange
-        end_date = start_date.replace(day=monthrange(start_date.year, start_date.month)[1])
-        px_per_day = 24
-    else:
-        # week
-        start_date = base_date - timedelta(days=base_date.weekday())
-        end_date = start_date + timedelta(days=6)
-        px_per_day = 40
+    # week only
+    start_date = base_date - timedelta(days=base_date.weekday())
+    end_date = start_date + timedelta(days=6)
+    px_per_day = 100
 
     days = []
     current = start_date
@@ -842,8 +909,11 @@ def personal_planner(request):
     events = Event.objects.filter(creator=request.user, start_date__lte=end_date, end_date__gte=start_date).order_by('start_date')
     rows = []
     for ev in events:
+        # 주간과 겹치지 않으면 스킵
+        if ev.end_date < start_date or ev.start_date > end_date:
+            continue
         start = max(ev.start_date, start_date)
-        end = max(start, min(ev.end_date, end_date))
+        end = min(ev.end_date, end_date)
         left = (start - start_date).days * px_per_day
         width = ((end - start).days + 1) * px_per_day
         color = ev.priority_color
@@ -922,3 +992,115 @@ def project_planner(request, pk):
         'next_start': start_date.strftime('%Y-%m-%d'),
     }
     return render(request, 'wbs/personal_planner.html', context)
+
+@login_required
+def personal_project_detail(request, pk):
+    """개인 플래너 디자인의 신규 상세 화면 (주/월 토글, 작업 항목 표시)"""
+    project = get_object_or_404(Project, pk=pk)
+    mode = request.GET.get('mode', 'week')
+    try:
+        start_str = request.GET.get('start')
+        base_date = datetime.strptime(start_str, '%Y-%m-%d').date() if start_str else timezone.localdate()
+    except Exception:
+        base_date = timezone.localdate()
+
+    if mode == 'month':
+        start_date = base_date.replace(day=1)
+        from calendar import monthrange
+        end_date = start_date.replace(day=monthrange(start_date.year, start_date.month)[1])
+        px_per_day = 24
+    else:
+        start_date = base_date - timedelta(days=base_date.weekday())
+        end_date = start_date + timedelta(days=6)
+        px_per_day = 100
+
+    # 타임라인 헤더 좌표
+    days_with_pos = []
+    current = start_date
+    left_px = 0
+    while current <= end_date:
+        days_with_pos.append((current, left_px))
+        left_px += px_per_day
+        current += timedelta(days=1)
+
+    # 월간 모드에서 상단 주 단위 셀(1주, 2주, ...) 표시용 데이터
+    week_cells = []
+    if mode == 'month':
+        week_index = 1
+        week_start = start_date
+        while week_start <= end_date:
+            week_cells.append({'label': f"{week_index}주"})
+            week_start += timedelta(days=7)
+            week_index += 1
+
+    # 개인 작업과 프로젝트 단계 모두 보여주기
+    rows = []
+    # PersonalTask rows
+    for t in project.personal_tasks.all().order_by('start_date'):
+        s = max(t.start_date, start_date)
+        e = max(s, min(t.end_date, end_date))
+        left = (s - start_date).days * px_per_day
+        width = ((e - s).days + 1) * px_per_day
+        assignees = ", ".join([u.username for u in t.assignees.all()])
+        row = {
+            'category': t.team_name,
+            'title': t.content,
+            'part': t.team_name,
+            'owner': assignees or '-',
+            'start': t.start_date,
+            'end': t.end_date,
+            'days': (t.end_date - t.start_date).days + 1,
+            'progress': t.get_progress_display(),
+            'left': left,
+            'width': width,
+            'color': project.theme_color,
+        }
+        if mode == 'week':
+            start_offset = (s - start_date).days
+            span_days = (e - s).days + 1
+            row['grid_col_start'] = start_offset + 1
+            row['grid_span'] = span_days
+        rows.append(row)
+
+    # 단계도 함께 (선택)
+    for ph in project.phases.all().order_by('order'):
+        s = max(ph.start_date, start_date)
+        e = max(s, min(ph.end_date, end_date))
+        left = (s - start_date).days * px_per_day
+        width = ((e - s).days + 1) * px_per_day
+        row = {
+            'category': 'Phase',
+            'title': ph.title,
+            'part': '-',
+            'owner': project.manager.username,
+            'start': ph.start_date,
+            'end': ph.end_date,
+            'days': (ph.end_date - ph.start_date).days + 1,
+            'progress': '—',
+            'left': left,
+            'width': width,
+            'color': project.theme_color,
+        }
+        if mode == 'week':
+            start_offset = (s - start_date).days
+            span_days = (e - s).days + 1
+            row['grid_col_start'] = start_offset + 1
+            row['grid_span'] = span_days
+        rows.append(row)
+
+    context = {
+        'project': project,
+        'mode': mode,
+        'start_date': start_date,
+        'end_date': end_date,
+        'days_with_pos': days_with_pos,
+        'week_cells': week_cells,
+        'num_weeks': len(week_cells) if mode == 'month' else 0,
+        'px_per_day': px_per_day,
+        'week_px': 7 * px_per_day,
+        'day_count': len(days_with_pos),
+        'rows': rows,
+        'prev_start': (start_date - timedelta(days=7)).strftime('%Y-%m-%d') if mode == 'week' else (start_date - timedelta(days=30)).strftime('%Y-%m-%d'),
+        'next_start': (start_date + timedelta(days=7)).strftime('%Y-%m-%d') if mode == 'week' else (start_date + timedelta(days=30)).strftime('%Y-%m-%d'),
+    }
+    return render(request, 'wbs/personal_project_detail.html', context)

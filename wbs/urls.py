@@ -18,10 +18,12 @@ urlpatterns = [
     path('projects/<int:pk>/edit/', views.project_edit, name='project_edit'),
     path('projects/<int:pk>/delete/', views.project_delete, name='project_delete'),
     path('projects/team/', views.team_projects, name='team_projects'),
+    path('projects/personal/', views.personal_projects, name='personal_projects'),
     
     # 프로젝트 단계 관련
     path('projects/<int:project_pk>/phases/create/', views.phase_create, name='phase_create'),
     path('projects/<int:project_pk>/phases/<int:phase_pk>/edit/', views.phase_edit, name='phase_edit'),
+    path('projects/<int:project_pk>/personal-tasks/add/', views.personal_task_add, name='personal_task_add'),
     
     # 승인 관련
     path('approvals/<int:approval_pk>/approve/', views.approve_request, name='approve_request'),
@@ -30,6 +32,8 @@ urlpatterns = [
     path('calendar/', views.calendar, name='calendar'),
     # 개인 플래너
     path('personal/', views.personal_planner, name='personal_planner'),
+    # 개인 프로젝트 상세(신규 화면)
+    path('projects/<int:pk>/personal/', views.personal_project_detail, name='personal_project_detail'),
     # 프로젝트별 플래너
     path('projects/<int:pk>/planner/', views.project_planner, name='project_planner'),
     

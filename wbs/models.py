@@ -19,10 +19,12 @@ def _contrast_text_color(hex_color: str) -> str:
 class UserProfile(models.Model):
     """사용자 프로필 모델"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    company = models.CharField(max_length=100, blank=True, verbose_name='회사')
     bio = models.TextField(max_length=500, blank=True, verbose_name='자기소개')
     phone = models.CharField(max_length=20, blank=True, verbose_name='전화번호')
     department = models.CharField(max_length=100, blank=True, verbose_name='부서')
     position = models.CharField(max_length=100, blank=True, verbose_name='직책')
+    team = models.CharField(max_length=100, blank=True, verbose_name='팀')
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name='프로필 이미지')
     birth_date = models.DateField(blank=True, null=True, verbose_name='생년월일')
     location = models.CharField(max_length=100, blank=True, verbose_name='위치')
@@ -86,6 +88,8 @@ class Project(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='planning', verbose_name='상태')
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium', verbose_name='우선순위')
     budget = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, verbose_name='예산')
+    is_personal_project = models.BooleanField(default=True, verbose_name='개인 프로젝트')
+    is_team_project = models.BooleanField(default=True, verbose_name='팀 프로젝트')
     color_theme = models.CharField(max_length=20, choices=COLOR_THEMES, default='blue', verbose_name='색상 테마')
     progress = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], verbose_name='진행률')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -127,8 +131,18 @@ class ProjectPhase(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='phases', verbose_name='프로젝트')
     title = models.CharField(max_length=200, verbose_name='단계명')
     description = models.TextField(verbose_name='설명')
+    team_name = models.CharField(max_length=100, blank=True, verbose_name='팀')
+    assignees = models.ManyToManyField(User, blank=True, related_name='assigned_phases', verbose_name='담당자')
     start_date = models.DateField(verbose_name='시작일')
     end_date = models.DateField(verbose_name='종료일')
+    daily_hours = models.IntegerField(default=8, validators=[MinValueValidator(1), MaxValueValidator(8)], verbose_name='일일 투입시간')
+    status = models.CharField(max_length=20, choices=[
+        ('planned', '계획'),
+        ('in_progress', '진행중'),
+        ('blocked', '보류'),
+        ('done', '완료')
+    ], default='planned', verbose_name='진행상태')
+    progress = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], verbose_name='진행률(%)')
     order = models.PositiveIntegerField(default=0, verbose_name='순서')
     is_completed = models.BooleanField(default=False, verbose_name='완료여부')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -549,3 +563,32 @@ class Event(models.Model):
             'other': 'fas fa-calendar',
         }
         return icons.get(self.event_type, 'fas fa-calendar')
+
+
+class PersonalTask(models.Model):
+    """개인 프로젝트 상세 화면에서 사용하는 작업 항목"""
+    PROGRESS_CHOICES = [
+        ('planned', '계획'),
+        ('in_progress', '진행중'),
+        ('blocked', '보류'),
+        ('done', '완료'),
+    ]
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='personal_tasks', verbose_name='프로젝트')
+    team_name = models.CharField(max_length=100, verbose_name='팀 명')
+    content = models.CharField(max_length=255, verbose_name='작업 내용')
+    assignees = models.ManyToManyField(User, blank=True, related_name='assigned_personal_tasks', verbose_name='담당자')
+    start_date = models.DateField(verbose_name='시작일')
+    end_date = models.DateField(verbose_name='종료일')
+    progress = models.CharField(max_length=20, choices=PROGRESS_CHOICES, default='planned', verbose_name='진행상태')
+    daily_hours = models.IntegerField(default=8, validators=[MinValueValidator(1), MaxValueValidator(8)], verbose_name='일일 투입시간(시간)')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = '개인 작업'
+        verbose_name_plural = '개인 작업'
+        ordering = ['start_date', 'end_date', 'team_name']
+
+    def __str__(self):
+        return f"{self.project.title} - {self.team_name} - {self.content}"

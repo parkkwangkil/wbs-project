@@ -34,6 +34,20 @@
                 </h3>
                 <p style="color: var(--text-secondary); margin-bottom: 1rem;">@{{ user.username }}</p>
                 
+                {% if profile.company %}
+                    <p style="color: var(--text-body); margin-bottom: 0.5rem;">
+                        <i class="fas fa-building" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        {{ profile.company }}
+                    </p>
+                {% endif %}
+
+                {% if profile.team %}
+                    <p style="color: var(--text-body); margin-bottom: 0.5rem;">
+                        <i class="fas fa-users" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        {{ profile.team }}
+                    </p>
+                {% endif %}
+
                 {% if profile.department %}
                     <p style="color: var(--text-body); margin-bottom: 0.5rem;">
                         <i class="fas fa-briefcase" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
