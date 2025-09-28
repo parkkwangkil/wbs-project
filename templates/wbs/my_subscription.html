@@ -14,27 +14,60 @@
       </h2>
     </div>
     <div class="card-body">
-      {% if subscription %}
+      {% if user_subscription %}
         <div style="display:grid;gap:1rem;">
           <div style="display:grid;grid-template-columns:160px 1fr;gap:.75rem;align-items:center;">
             <div style="color:var(--text-secondary);">플랜</div>
-            <div style="color:var(--text-heading);font-weight:600;">{{ subscription.plan.display_name }}</div>
+            <div style="color:var(--text-heading);font-weight:600;">{{ user_subscription.plan.display_name }}</div>
           </div>
           <div style="display:grid;grid-template-columns:160px 1fr;gap:.75rem;align-items:center;">
             <div style="color:var(--text-secondary);">상태</div>
-            <div>{{ subscription.status }}</div>
+            <div>
+              <span class="badge" style="background:#10B981;color:#fff;padding:.25rem .5rem;border-radius:6px;font-size:.8rem;">{{ user_subscription.status }}</span>
+            </div>
           </div>
           <div style="display:grid;grid-template-columns:160px 1fr;gap:.75rem;align-items:center;">
             <div style="color:var(--text-secondary);">기간</div>
-            <div>{{ subscription.start_date|date:'Y-m-d' }} ~ {{ subscription.end_date|date:'Y-m-d' }}</div>
+            <div>{{ user_subscription.start_date|date:'Y-m-d' }} ~ {{ user_subscription.end_date|date:'Y-m-d' }}</div>
           </div>
           <div style="display:grid;grid-template-columns:160px 1fr;gap:.75rem;align-items:center;">
             <div style="color:var(--text-secondary);">자동 갱신</div>
-            <div>{{ subscription.auto_renew|yesno:'사용,미사용' }}</div>
+            <div>{{ user_subscription.auto_renew|yesno:'사용,미사용' }}</div>
           </div>
         </div>
-        <div style="margin-top:1.25rem;display:flex;gap:.5rem;">
+        <div style="margin-top:1.25rem;display:flex;gap:.5rem;flex-wrap:wrap;">
           <a href="{% url 'wbs:subscription_plans' %}" class="btn btn-secondary"><i class="fas fa-sync"></i> 플랜 변경</a>
+          <a href="{% url 'wbs:cancel_subscription' %}" class="btn btn-secondary" style="background:#ef4444;border:none;color:#fff;"><i class="fas fa-times"></i> 구독 취소</a>
+        </div>
+
+        <div class="card" style="margin-top:1.5rem;">
+          <div class="card-header"><h3 class="card-title" style="display:flex;align-items:center;gap:.5rem;"><i class="fas fa-receipt" style="color:var(--text-secondary);"></i> 결제 이력(데모)</h3></div>
+          <div class="card-body">
+            <div style="overflow:auto;">
+              <table class="table" style="width:100%;min-width:640px;">
+                <thead>
+                  <tr>
+                    <th>결제일시</th>
+                    <th>금액</th>
+                    <th>수단</th>
+                    <th>상태</th>
+                    <th>결제ID</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in payments %}
+                    <tr>
+                      <td>{{ p.paid_at }}</td>
+                      <td style="font-weight:600;">{{ p.amount|floatformat:0 }} {{ p.currency }}</td>
+                      <td>{{ p.method|upper }}</td>
+                      <td><span class="badge" style="background:#10B981;color:#fff;padding:.2rem .5rem;border-radius:6px;">{{ p.status }}</span></td>
+                      <td style="color:var(--text-secondary);">{{ p.payment_id }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       {% else %}
         <div style="color:var(--text-secondary);">구독 정보가 없습니다. 플랜을 선택해 시작해보세요.</div>

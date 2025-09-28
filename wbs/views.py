@@ -675,8 +675,41 @@ def my_subscription(request):
         messages.info(request, '구독 정보가 없습니다. 플랜을 선택해주세요.')
         return redirect('wbs:subscription_plans')
     
+    # 가짜 결제 이력 (데모용)
+    # 실제 결제 연동 시에는 Payment 모델/웹훅 기반으로 대체
+    now = timezone.now()
+    amount = user_subscription.plan.price
+    currency = user_subscription.plan.currency
+    payments = [
+        {
+            'paid_at': (now - timedelta(days=60)).strftime('%Y-%m-%d %H:%M'),
+            'amount': amount,
+            'currency': currency,
+            'method': user_subscription.payment_method or 'card',
+            'payment_id': f'DEMO-{user_subscription.user_id}-001',
+            'status': 'paid',
+        },
+        {
+            'paid_at': (now - timedelta(days=30)).strftime('%Y-%m-%d %H:%M'),
+            'amount': amount,
+            'currency': currency,
+            'method': user_subscription.payment_method or 'card',
+            'payment_id': f'DEMO-{user_subscription.user_id}-002',
+            'status': 'paid',
+        },
+        {
+            'paid_at': now.strftime('%Y-%m-%d %H:%M'),
+            'amount': amount,
+            'currency': currency,
+            'method': user_subscription.payment_method or 'card',
+            'payment_id': f'DEMO-{user_subscription.user_id}-003',
+            'status': 'paid',
+        },
+    ]
+
     context = {
         'user_subscription': user_subscription,
+        'payments': payments,
     }
     return render(request, 'wbs/my_subscription.html', context)
 
