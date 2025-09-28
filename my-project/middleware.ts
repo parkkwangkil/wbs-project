@@ -9,7 +9,8 @@ export function middleware(req: Request) {
   if (
     url.pathname.startsWith('/_next') ||
     url.pathname.startsWith('/favicon') ||
-    url.pathname === '/robots.txt'
+    url.pathname === '/robots.txt' ||
+    url.pathname === '/google33eba2ec6f8eb1b8.html'
   ) {
     return NextResponse.next();
   }
@@ -19,7 +20,7 @@ export function middleware(req: Request) {
 }
 
 export const config = {
-  matcher: ['/((?!_next|favicon\\.ico|robots\\.txt).*)'],
+  matcher: ['/((?!_next|favicon\\.ico|robots\\.txt|google33eba2ec6f8eb1b8\\.html).*)'],
 };
 
 
