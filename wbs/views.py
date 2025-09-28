@@ -99,12 +99,7 @@ def team_projects(request):
         except Project.DoesNotExist:
             pass
 
-    # 프로젝트가 하나 이상이면 가장 최근 프로젝트 상세로 바로 이동
-    first_project = projects.first()
-    if first_project:
-        return redirect('wbs:project_detail', pk=first_project.pk)
-
-    # 없으면 안내 리스트 페이지 표시
+    # 항상 목록을 보여주어 참여 중인 프로젝트를 한눈에 볼 수 있게 한다
     return render(request, 'wbs/team_projects.html', {'projects': projects})
 
 @login_required
