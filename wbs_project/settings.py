@@ -25,7 +25,12 @@ SECRET_KEY = "django-insecure-vkjp)h)33h0)=hatyj)b6*d%&rh)5!a@%3d3((__9-m3^l8df*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    ".trycloudflare.com",
+    ".vercel.app",
+]
 
 
 # Application definition
@@ -146,6 +151,16 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
+
+# Reverse proxy settings (Cloudflare/Vercel)
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# CSRF for proxied hosts
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.trycloudflare.com",
+    "https://*.vercel.app",
+]
 
 # Django Allauth 설정 비활성화됨
 # SITE_ID = 1
