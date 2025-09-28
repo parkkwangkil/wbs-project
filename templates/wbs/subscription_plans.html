@@ -5,46 +5,17 @@
 {% block page_title %}구독 플랜{% endblock %}
 
 {% block content %}
-<style>
-  /* Simple Figma-like pricing visuals (self-contained) */
-  .pricing-hero { background: linear-gradient(135deg, #0ea5e9 0%, #7c3aed 100%); color:#fff; border-radius:16px; padding:24px; margin-bottom:20px; }
-  .pricing-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap: 20px; }
-  .plan-card { border:1px solid var(--card-border); border-radius:16px; padding:18px; background: var(--bg-surface); box-shadow: 0 8px 24px rgba(0,0,0,.06); position:relative; transition:transform .2s ease, box-shadow .2s ease; display:flex; height:100%; }
-  .plan-card:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,.08); }
-  .plan-badge { position:absolute; top:-10px; left:50%; transform:translateX(-50%); padding:6px 12px; border-radius:20px; color:#fff; font-weight:700; font-size:.8rem; background: linear-gradient(135deg,#8B5CF6,#7C3AED); }
-  .price { font-size:2rem; font-weight:800; color: var(--btn-primary-bg); }
-  .feature { display:flex; align-items:center; gap:8px; color:var(--text-body); margin:.4rem 0; }
-  .feature i { color:#10B981; }
-  .plan-inner { display:flex; flex-direction:column; width:100%; }
-  .plan-header { text-align:center; margin-bottom:16px; min-height: 120px; display:flex; flex-direction:column; justify-content:center; }
-  .features { flex:1; margin-bottom: 12px; min-height: 160px; }
-  .plan-cta { margin-top:auto; }
-  /* Revert button to previous compact size user preferred */
-  .btn-wide { width:100%; height:28px; display:inline-flex; align-items:center; justify-content:center; padding:0 10px; font-size:.8rem; border-radius:8px; }
-  .sub-pill { background: rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.3); padding:6px 10px; border-radius:999px; font-size:.85rem; }
-</style>
-
 <div class="grid grid-cols-1">
-    <div class="pricing-hero">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <i class="fas fa-crown"></i>
-          <div style="font-size:1.25rem;font-weight:700;">구독 플랜 선택</div>
-        </div>
-        {% if user_subscription %}
-          <div class="sub-pill">
-            현재 플랜: <strong style="margin-left:6px;">{{ user_subscription.plan.display_name }}</strong>
-            · 만료 {{ user_subscription.end_date|date:'Y-m-d' }}
-            {% if user_subscription.auto_renew %} · 자동 갱신{% endif %}
-          </div>
-        {% endif %}
-      </div>
-    </div>
-
     <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-crown" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                구독 플랜 선택
+            </h2>
+        </div>
         <div class="card-body">
             {% if user_subscription %}
-                <div style="background: var(--sidebar-hover); padding: 1rem; border-radius: 12px; margin-bottom: 1.25rem; border: 1px solid var(--card-border);">
+                <div style="background: var(--sidebar-hover); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid var(--card-border);">
                     <h3 style="color: var(--text-heading); margin-bottom: 0.5rem;">
                         <i class="fas fa-check-circle" style="color: #10B981; margin-right: 0.5rem;"></i>
                         현재 구독: {{ user_subscription.plan.display_name }}
@@ -58,69 +29,96 @@
                 </div>
             {% endif %}
             
-            <div class="pricing-grid">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
                 {% for plan in plans %}
-                    <div class="plan-card">
-                        {% if plan.name == 'premium' %}<div class="plan-badge">인기 플랜</div>{% endif %}
-                        <div class="plan-inner">
-                          <div class="plan-header">
-                              <h3 style="color: var(--text-heading); margin-bottom:.25rem; font-size: 1.25rem;">{{ plan.display_name }}</h3>
-                              <div style="margin-bottom:.35rem;">
-                                  <span class="price">{{ plan.price|floatformat:0 }}</span>
-                                  <span style="color: var(--text-secondary); margin-left: 4px;">{{ plan.currency }}</span>
-                              </div>
-                              <p style="color: var(--text-secondary); font-size: .9rem; margin: 0;">{% if plan.billing_cycle == 'monthly' %}월간{% else %}연간{% endif %} 결제</p>
-                          </div>
+                    <div style="border: 1px solid var(--card-border); border-radius: 12px; padding: 1.5rem; background: var(--bg-surface); position: relative; transition: all 0.3s ease;">
+                        {% if plan.name == 'premium' %}
+                            <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #8B5CF6, #7C3AED); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.875rem; font-weight: 600;">
+                                인기 플랜
+                            </div>
+                        {% endif %}
                         
-                        <div class="features">
-                            <h4 style="color: var(--text-heading); margin-bottom: .75rem; font-size: .95rem;">포함 기능</h4>
+                        <div style="text-align: center; margin-bottom: 1.5rem;">
+                            <h3 style="color: var(--text-heading); margin-bottom: 0.5rem; font-size: 1.25rem;">{{ plan.display_name }}</h3>
+                            <div style="margin-bottom: 0.5rem;">
+                                <span style="font-size: 2rem; font-weight: 700; color: var(--btn-primary-bg);">{{ plan.price|floatformat:0 }}</span>
+                                <span style="color: var(--text-secondary); margin-left: 0.25rem;">{{ plan.currency }}</span>
+                            </div>
+                            <p style="color: var(--text-secondary); font-size: 0.875rem; margin: 0;">
+                                {% if plan.billing_cycle == 'monthly' %}월간{% else %}연간{% endif %} 결제
+                            </p>
+                        </div>
+                        
+                        <div style="margin-bottom: 1.5rem;">
+                            <h4 style="color: var(--text-heading); margin-bottom: 1rem; font-size: 1rem;">포함 기능</h4>
                             <ul style="list-style: none; padding: 0; margin: 0;">
-                                <li class="feature"><i class="fas fa-check"></i>프로젝트 {{ plan.max_projects }}개</li>
-                                <li class="feature"><i class="fas fa-check"></i>팀원 {{ plan.max_team_members }}명</li>
-                                <li class="feature"><i class="fas fa-check"></i>저장공간 {{ plan.max_storage_gb }}GB</li>
+                                <li style="display: flex; align-items: center; margin-bottom: 0.5rem; color: var(--text-body);">
+                                    <i class="fas fa-check" style="color: #10B981; margin-right: 0.5rem; width: 16px;"></i>
+                                    프로젝트 {{ plan.max_projects }}개
+                                </li>
+                                <li style="display: flex; align-items: center; margin-bottom: 0.5rem; color: var(--text-body);">
+                                    <i class="fas fa-check" style="color: #10B981; margin-right: 0.5rem; width: 16px;"></i>
+                                    팀원 {{ plan.max_team_members }}명
+                                </li>
+                                <li style="display: flex; align-items: center; margin-bottom: 0.5rem; color: var(--text-body);">
+                                    <i class="fas fa-check" style="color: #10B981; margin-right: 0.5rem; width: 16px;"></i>
+                                    저장공간 {{ plan.max_storage_gb }}GB
+                                </li>
                                 {% if plan.has_priority_support %}
-                                    <li class="feature"><i class="fas fa-check"></i>우선 지원</li>
+                                    <li style="display: flex; align-items: center; margin-bottom: 0.5rem; color: var(--text-body);">
+                                        <i class="fas fa-check" style="color: #10B981; margin-right: 0.5rem; width: 16px;"></i>
+                                        우선 지원
+                                    </li>
                                 {% endif %}
                                 {% if plan.has_advanced_analytics %}
-                                    <li class="feature"><i class="fas fa-check"></i>고급 분석</li>
+                                    <li style="display: flex; align-items: center; margin-bottom: 0.5rem; color: var(--text-body);">
+                                        <i class="fas fa-check" style="color: #10B981; margin-right: 0.5rem; width: 16px;"></i>
+                                        고급 분석
+                                    </li>
                                 {% endif %}
                                 {% if plan.has_api_access %}
-                                    <li class="feature"><i class="fas fa-check"></i>API 접근</li>
+                                    <li style="display: flex; align-items: center; margin-bottom: 0.5rem; color: var(--text-body);">
+                                        <i class="fas fa-check" style="color: #10B981; margin-right: 0.5rem; width: 16px;"></i>
+                                        API 접근
+                                    </li>
                                 {% endif %}
                                 {% if plan.has_custom_branding %}
-                                    <li class="feature"><i class="fas fa-check"></i>커스텀 브랜딩</li>
+                                    <li style="display: flex; align-items: center; margin-bottom: 0.5rem; color: var(--text-body);">
+                                        <i class="fas fa-check" style="color: #10B981; margin-right: 0.5rem; width: 16px;"></i>
+                                        커스텀 브랜딩
+                                    </li>
                                 {% endif %}
                             </ul>
                         </div>
                         
-                        <div class="plan-cta" style="text-align: center;">
+                        <div style="text-align: center;">
                             {% if user_subscription and user_subscription.plan == plan %}
-                                <button class="btn btn-secondary btn-wide" disabled>
+                                <button class="btn btn-secondary" disabled style="width: 100%;">
                                     <i class="fas fa-check"></i>
                                     현재 플랜
                                 </button>
                             {% else %}
-                                <a href="{% url 'wbs:subscribe' plan.id %}" class="btn btn-primary btn-wide">
+                                <a href="{% url 'wbs:subscribe' plan.id %}" class="btn btn-primary" style="width: 100%;">
                                     <i class="fas fa-credit-card"></i>
                                     {% if plan.price == 0 %}무료 시작{% else %}구독하기{% endif %}
                                 </a>
                             {% endif %}
                         </div>
-                        </div><!-- /.plan-inner -->
                     </div>
                 {% endfor %}
             </div>
             
             {% if user_subscription %}
-              <div style="margin-top: 1.25rem; text-align: center;">
-                  <a href="{% url 'wbs:my_subscription' %}" class="btn btn-secondary">
-                      <i class="fas fa-user-cog"></i>
-                      내 구독 관리
-                  </a>
-              </div>
+                <div style="margin-top: 2rem; text-align: center;">
+                    <a href="{% url 'wbs:my_subscription' %}" class="btn btn-secondary">
+                        <i class="fas fa-user-cog"></i>
+                        내 구독 관리
+                    </a>
+                </div>
             {% endif %}
         </div>
     </div>
+
 </div>
 {% endblock %}
 
