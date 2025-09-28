@@ -88,9 +88,15 @@ def team_projects(request):
     # 팀 프로젝트: 기본은 팀 프로젝트(True) + 내가 관리/참여한 것
     # 단, 내가 팀원으로 포함된 프로젝트는 is_team_project 여부와 상관없이 표시(참여 관점)
     projects = Project.objects.filter(
-        Q(manager=request.user) | Q(team_members=request.user),
+        Q(manager=request.user) |
+        Q(team_members=request.user) |
+        Q(tl=request.user) |
+        Q(phases__assignees=request.user)
     ).filter(
-        Q(is_team_project=True) | Q(team_members=request.user)
+        Q(is_team_project=True) |
+        Q(team_members=request.user) |
+        Q(tl=request.user) |
+        Q(phases__assignees=request.user)
     ).distinct().order_by('-updated_at', '-created_at')
 
     # id 쿼리 파라미터가 오면 해당 프로젝트 상세로 이동 (권한 확인)
