@@ -1,2 +1,2 @@
-release: python manage.py collectstatic --noinput && python manage.py migrate && python create_admin.py
+release: python manage.py collectstatic --noinput && python manage.py migrate && python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.get_or_create(username='admin', defaults={'email': 'admin@example.com', 'is_staff': True, 'is_superuser': True}); u = User.objects.get(username='admin'); u.set_password('admin1234'); u.save(); print('관리자 계정 준비 완료!')"
 web: gunicorn wbs_project.wsgi:application --bind 0.0.0.0:$PORT
