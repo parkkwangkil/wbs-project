@@ -180,6 +180,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.cloudtype.app",
     "https://*.railway.app",
     "https://port-next-wbs-project-mg7aewceab22f160.sel3.cloudtype.app",
+    "https://web-production-be50.up.railway.app",
 ]
 
 # CSRF 설정 강화
@@ -187,6 +188,8 @@ CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_USE_SESSIONS = False
+CSRF_COOKIE_DOMAIN = None
+CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
 
 # Django Allauth 설정 비활성화됨
 # SITE_ID = 1
