@@ -528,6 +528,32 @@
                 margin-left: 0;
             }
 
+            /* 데스크톱 토글 숨기기 */
+            .desktop-only {
+                display: none !important;
+            }
+
+            /* 모바일 햄버거 버튼 표시 */
+            .mobile-menu-toggle {
+                display: block !important;
+            }
+
+            /* 모바일 오버레이 */
+            .mobile-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 1000;
+                display: none;
+            }
+
+            .mobile-overlay.show {
+                display: block;
+            }
+
             .search-box input {
                 width: 200px;
             }
@@ -562,6 +588,9 @@
 </head>
 <body>
     <div class="app-layout">
+        <!-- 모바일 오버레이 -->
+        <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileSidebar()"></div>
+        
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <!-- Sidebar Header -->
@@ -675,7 +704,12 @@
             <!-- Header -->
             <header class="main-header">
                 <div style="display: flex; align-items: center; gap: 1rem;">
-                    <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebar-toggle" style="background: #3B82F6; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                    <!-- 데스크톱 사이드바 토글 -->
+                    <button class="sidebar-toggle desktop-only" onclick="toggleSidebar()" id="sidebar-toggle" style="background: #3B82F6; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <!-- 모바일 햄버거 메뉴 -->
+                    <button class="mobile-menu-toggle" onclick="toggleMobileSidebar()" id="mobile-toggle" style="background: #3B82F6; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; display: none;">
                         <i class="fas fa-bars"></i>
                     </button>
                     <h1>{% block page_title %}대시보드{% endblock %}</h1>
@@ -738,6 +772,24 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('open');
+        }
+
+        // 모바일 사이드바 토글
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('show');
+        }
+
+        // 모바일 사이드바 닫기
+        function closeMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
         }
 
         // Search functionality
