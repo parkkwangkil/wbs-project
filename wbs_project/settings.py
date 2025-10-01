@@ -179,7 +179,14 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.vercel.app",
     "https://*.cloudtype.app",
     "https://*.railway.app",
+    "https://port-next-wbs-project-mg7aewceab22f160.sel3.cloudtype.app",
 ]
+
+# CSRF 설정 강화
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_USE_SESSIONS = False
 
 # Django Allauth 설정 비활성화됨
 # SITE_ID = 1
