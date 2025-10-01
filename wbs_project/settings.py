@@ -31,6 +31,8 @@ ALLOWED_HOSTS = [
     ".trycloudflare.com",
     ".vercel.app",
     ".cloudtype.app",
+    ".railway.app",
+    "healthcheck.railway.app",
 ]
 
 
