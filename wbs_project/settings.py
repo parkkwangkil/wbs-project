@@ -148,6 +148,10 @@ USE_L10N = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Admin 정적 파일 프록시 지원
+ADMIN_MEDIA_PREFIX = '/static/admin/'
+FORCE_SCRIPT_NAME = None
+
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -174,6 +178,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.trycloudflare.com",
     "https://*.vercel.app",
     "https://*.cloudtype.app",
+    "https://*.railway.app",
 ]
 
 # Django Allauth 설정 비활성화됨

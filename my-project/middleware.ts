@@ -15,6 +15,18 @@ export function middleware(req: Request) {
     return NextResponse.next();
   }
 
+  // Django Admin 정적 파일 처리
+  if (url.pathname.startsWith('/static/admin/') || url.pathname.startsWith('/admin/')) {
+    const dest = `${backendBase}${url.pathname}${url.search}`;
+    const response = NextResponse.rewrite(dest);
+    
+    // Admin 관련 헤더 설정
+    response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    
+    return response;
+  }
+
   const dest = `${backendBase}${url.pathname}${url.search}`;
   return NextResponse.rewrite(dest);
 }
