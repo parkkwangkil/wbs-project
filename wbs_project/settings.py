@@ -216,6 +216,32 @@ ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
+# 로그인 에러 메시지 설정
+ACCOUNT_LOGIN_ATTEMPTS_LIMIT = 5
+ACCOUNT_LOGIN_ATTEMPTS_TIMEOUT = 300
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
+
+# Django Admin 에러 메시지 개선
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+    },
+    'loggers': {
+        'django.contrib.auth': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
 # 소셜 로그인 프로바이더 설정
 SOCIALACCOUNT_PROVIDERS = {
     'google': {

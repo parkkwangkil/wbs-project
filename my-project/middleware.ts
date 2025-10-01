@@ -15,14 +15,18 @@ export function middleware(req: Request) {
     return NextResponse.next();
   }
 
-  // Django Admin 정적 파일 처리
-  if (url.pathname.startsWith('/static/admin/') || url.pathname.startsWith('/admin/')) {
+  // Django Admin 및 로그인 처리
+  if (url.pathname.startsWith('/static/admin/') || 
+      url.pathname.startsWith('/admin/') || 
+      url.pathname.startsWith('/accounts/')) {
     const dest = `${backendBase}${url.pathname}${url.search}`;
     const response = NextResponse.rewrite(dest);
     
-    // Admin 관련 헤더 설정
+    // 로그인 관련 헤더 설정
     response.headers.set('X-Frame-Options', 'SAMEORIGIN');
     response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('X-Forwarded-Proto', 'https');
+    response.headers.set('X-Forwarded-Host', url.host);
     
     return response;
   }

@@ -42,6 +42,30 @@
             <form method="post" class="space-y-4">
                 {% csrf_token %}
                 
+                <!-- 에러 메시지 표시 -->
+                {% if form.errors %}
+                    <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                        <div style="color: #DC2626; font-size: 14px; font-weight: 500;">
+                            <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                            로그인 실패
+                        </div>
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <div style="color: #DC2626; font-size: 13px; margin-top: 4px;">
+                                    • {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+                        {% if form.non_field_errors %}
+                            {% for error in form.non_field_errors %}
+                                <div style="color: #DC2626; font-size: 13px; margin-top: 4px;">
+                                    • 아이디 또는 비밀번호가 올바르지 않습니다.
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                {% endif %}
+                
                 <div class="form-group">
                     <label class="form-label" for="id_login">
                         <i class="fas fa-user" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
