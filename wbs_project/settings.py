@@ -30,6 +30,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     ".trycloudflare.com",
     ".vercel.app",
+    ".cloudtype.app",
 ]
 
 
@@ -160,6 +161,7 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_TRUSTED_ORIGINS = [
     "https://*.trycloudflare.com",
     "https://*.vercel.app",
+    "https://*.cloudtype.app",
 ]
 
 # Django Allauth 설정 비활성화됨
