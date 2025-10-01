@@ -1,4 +1,4 @@
-# Google OAuth 설정 가이드
+# 소셜 로그인 설정 가이드 (Google, 네이버, 카카오)
 
 ## 🔑 Google Cloud Console 설정
 
@@ -34,6 +34,46 @@
 - 생성된 클라이언트 ID와 클라이언트 시크릿 복사
 - 이 값들을 환경변수에 설정
 
+## 🔑 네이버 개발자 센터 설정
+
+### 1. 네이버 개발자 센터 접속
+- [네이버 개발자 센터](https://developers.naver.com/) 접속
+- 네이버 계정으로 로그인
+
+### 2. 애플리케이션 등록
+- "Application" > "애플리케이션 등록" 클릭
+- **애플리케이션 이름**: `WBS Project Management`
+- **사용 API**: `네이버 아이디로 로그인` 선택
+- **서비스 환경**: `Web` 선택
+- **서비스 URL**: `http://localhost:8000`
+- **Callback URL**: `http://localhost:8000/accounts/naver/login/callback/`
+
+### 3. 클라이언트 ID와 시크릿 복사
+- 생성된 **Client ID**와 **Client Secret** 복사
+
+## 🟡 카카오 개발자 센터 설정
+
+### 1. 카카오 개발자 센터 접속
+- [카카오 개발자 센터](https://developers.kakao.com/) 접속
+- 카카오 계정으로 로그인
+
+### 2. 애플리케이션 등록
+- "내 애플리케이션" > "애플리케이션 추가하기" 클릭
+- **앱 이름**: `WBS Project Management`
+- **사업자명**: 개인 또는 회사명
+
+### 3. 플랫폼 설정
+- **Web 플랫폼** 추가
+- **사이트 도메인**: `http://localhost:8000`
+
+### 4. 제품 설정
+- **카카오 로그인** 활성화
+- **Redirect URI**: `http://localhost:8000/accounts/kakao/login/callback/`
+
+### 5. 클라이언트 ID와 시크릿 복사
+- **앱 키**에서 **REST API 키** (Client ID)
+- **보안**에서 **Client Secret** 생성
+
 ## 🌐 환경변수 설정
 
 ### Railway 환경변수 설정
@@ -41,8 +81,17 @@
 2. "Variables" 탭 클릭
 3. 다음 환경변수 추가:
    ```
+   # Google OAuth
    GOOGLE_OAUTH2_CLIENT_ID=your-google-client-id-here
    GOOGLE_OAUTH2_CLIENT_SECRET=your-google-client-secret-here
+   
+   # 네이버 OAuth
+   NAVER_OAUTH2_CLIENT_ID=your-naver-client-id-here
+   NAVER_OAUTH2_CLIENT_SECRET=your-naver-client-secret-here
+   
+   # 카카오 OAuth
+   KAKAO_OAUTH2_CLIENT_ID=your-kakao-client-id-here
+   KAKAO_OAUTH2_CLIENT_SECRET=your-kakao-client-secret-here
    ```
 
 ### Cloudtype 환경변수 설정

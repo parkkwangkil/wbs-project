@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.naver",
+    "allauth.socialaccount.providers.kakao",
     
     # Third party apps
     # "allauth",
@@ -209,7 +211,7 @@ ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
-# Google OAuth 설정
+# 소셜 로그인 프로바이더 설정
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': [
@@ -220,9 +222,27 @@ SOCIALACCOUNT_PROVIDERS = {
             'access_type': 'online',
         },
         'OAUTH_PKCE_ENABLED': True,
+    },
+    'naver': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+    },
+    'kakao': {
+        'SCOPE': [
+            'profile',
+            'account_email',
+        ],
     }
 }
 
-# Google OAuth 환경변수
+# 소셜 로그인 환경변수
 GOOGLE_OAUTH2_CLIENT_ID = os.getenv('GOOGLE_OAUTH2_CLIENT_ID', '')
 GOOGLE_OAUTH2_CLIENT_SECRET = os.getenv('GOOGLE_OAUTH2_CLIENT_SECRET', '')
+
+NAVER_OAUTH2_CLIENT_ID = os.getenv('NAVER_OAUTH2_CLIENT_ID', '')
+NAVER_OAUTH2_CLIENT_SECRET = os.getenv('NAVER_OAUTH2_CLIENT_SECRET', '')
+
+KAKAO_OAUTH2_CLIENT_ID = os.getenv('KAKAO_OAUTH2_CLIENT_ID', '')
+KAKAO_OAUTH2_CLIENT_SECRET = os.getenv('KAKAO_OAUTH2_CLIENT_SECRET', '')

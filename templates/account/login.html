@@ -14,11 +14,19 @@
             </h2>
         </div>
         <div class="card-body">
-            <!-- Google 소셜 로그인 -->
+            <!-- 소셜 로그인 -->
             <div style="margin-bottom: 2rem;">
-                <a href="{% url 'google_login' %}" class="btn btn-primary" style="width: 100%; justify-content: center; margin-bottom: 1rem;">
+                <a href="{% url 'google_login' %}" class="btn btn-primary" style="width: 100%; justify-content: center; margin-bottom: 0.75rem;">
                     <i class="fab fa-google" style="margin-right: 0.5rem;"></i>
                     Google로 로그인
+                </a>
+                <a href="{% url 'naver_login' %}" class="btn" style="width: 100%; justify-content: center; margin-bottom: 0.75rem; background: #03C75A; color: white; border: none;">
+                    <i class="fas fa-comment" style="margin-right: 0.5rem;"></i>
+                    네이버로 로그인
+                </a>
+                <a href="{% url 'kakao_login' %}" class="btn" style="width: 100%; justify-content: center; margin-bottom: 0.75rem; background: #FEE500; color: #3C1E1E; border: none;">
+                    <i class="fas fa-comment-dots" style="margin-right: 0.5rem;"></i>
+                    카카오로 로그인
                 </a>
             </div>
 
