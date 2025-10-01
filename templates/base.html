@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}WBS Project Management{% endblock %}</title>
     {% load static %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -556,6 +556,191 @@
 
             .search-box input {
                 width: 200px;
+            }
+        }
+        
+        /* ========================================
+           전역 반응형 시스템
+           ======================================== */
+        
+        /* 기본 반응형 설정 */
+        * {
+            box-sizing: border-box;
+        }
+        
+        html {
+            font-size: 16px;
+        }
+        
+        body {
+            font-size: 16px;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+        
+        /* 컨테이너 반응형 */
+        .container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+        
+        /* 그리드 반응형 */
+        .grid {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .grid-cols-1 { grid-template-columns: 1fr; }
+        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+        
+        /* 카드 반응형 */
+        .card {
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 1rem;
+        }
+        
+        /* 버튼 반응형 */
+        .btn {
+            width: 100%;
+            max-width: 100%;
+            padding: 12px 16px;
+            font-size: 16px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        /* 폼 요소 반응형 */
+        .form-control {
+            width: 100%;
+            max-width: 100%;
+            padding: 12px 16px;
+            font-size: 16px;
+            min-height: 44px;
+            border-radius: 8px;
+            border: 2px solid var(--card-border);
+            transition: all 0.2s ease;
+        }
+        
+        /* ========================================
+           모바일 최적화 (768px 이하)
+           ======================================== */
+        @media (max-width: 768px) {
+            html {
+                font-size: 14px;
+            }
+            
+            body {
+                font-size: 14px;
+            }
+            
+            .container {
+                padding: 0 12px;
+            }
+            
+            .grid {
+                gap: 0.75rem;
+            }
+            
+            .grid-cols-2,
+            .grid-cols-3,
+            .grid-cols-4 {
+                grid-template-columns: 1fr;
+            }
+            
+            .card {
+                margin-bottom: 0.75rem;
+            }
+            
+            .btn {
+                min-height: 48px;
+                padding: 14px 16px;
+                font-size: 16px;
+            }
+            
+            .form-control {
+                min-height: 48px;
+                padding: 14px 16px;
+                font-size: 16px;
+            }
+            
+            /* 헤더 모바일 */
+            .header {
+                padding: 12px 16px;
+            }
+            
+            .header h1 {
+                font-size: 1.25rem;
+            }
+            
+            /* 메인 콘텐츠 모바일 */
+            .main-content {
+                padding: 16px;
+            }
+        }
+        
+        /* ========================================
+           태블릿 최적화 (769px - 1023px)
+           ======================================== */
+        @media (min-width: 769px) and (max-width: 1023px) {
+            .container {
+                padding: 0 20px;
+            }
+            
+            .grid-cols-3,
+            .grid-cols-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .btn {
+                min-height: 44px;
+                padding: 12px 16px;
+            }
+            
+            .form-control {
+                min-height: 44px;
+                padding: 12px 16px;
+            }
+        }
+        
+        /* ========================================
+           데스크톱 최적화 (1024px 이상)
+           ======================================== */
+        @media (min-width: 1024px) {
+            .container {
+                max-width: 1200px;
+                padding: 0 24px;
+            }
+            
+            .grid-cols-3 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .grid-cols-4 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        /* ========================================
+           대형 화면 최적화 (1200px 이상)
+           ======================================== */
+        @media (min-width: 1200px) {
+            .container {
+                max-width: 1400px;
+                padding: 0 32px;
+            }
+            
+            .grid-cols-4 {
+                grid-template-columns: repeat(4, 1fr);
             }
         }
     </style>

@@ -39,7 +39,7 @@
                         <i class="fas fa-user" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
                         사용자명 또는 이메일
                     </label>
-                    <input type="text" name="login" id="id_login" class="form-control" placeholder="사용자명 또는 이메일을 입력하세요" required>
+                    <input type="text" name="login" id="id_login" class="form-control login-input" placeholder="사용자명 또는 이메일을 입력하세요" required>
                 </div>
 
                 <div class="form-group">
@@ -47,7 +47,7 @@
                         <i class="fas fa-lock" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
                         비밀번호
                     </label>
-                    <input type="password" name="password" id="id_password" class="form-control" placeholder="비밀번호를 입력하세요" required>
+                    <input type="password" name="password" id="id_password" class="form-control login-input" placeholder="비밀번호를 입력하세요" required>
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -87,6 +87,68 @@
 
 .fab {
     font-family: "Font Awesome 5 Brands";
+}
+
+/* 로그인 입력창을 버튼과 동일한 사이즈로 */
+.login-input {
+    height: 44px !important;
+    padding: 12px 16px !important;
+    font-size: 16px !important;
+    border: 2px solid var(--card-border) !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* 모바일에서 텍스트창 튀는 문제 해결 */
+@media (max-width: 768px) {
+    .login-input {
+        height: 48px !important;
+        padding: 14px 16px !important;
+        font-size: 16px !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        appearance: none !important;
+        border-radius: 8px !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        transform: translateZ(0) !important;
+        -webkit-transform: translateZ(0) !important;
+    }
+    
+    .btn-primary {
+        height: 48px !important;
+        padding: 14px 16px !important;
+        font-size: 16px !important;
+    }
+    
+    /* 모바일에서 카드 너비 조정 */
+    .card {
+        max-width: 100% !important;
+        margin: 0 16px !important;
+        width: calc(100% - 32px) !important;
+    }
+}
+
+.login-input:focus {
+    border-color: var(--btn-primary-bg) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    outline: none !important;
+}
+
+/* 로그인 버튼과 동일한 높이로 맞춤 */
+.btn-primary {
+    height: 44px !important;
+    padding: 12px 16px !important;
+    font-size: 16px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
 }
 </style>
 {% endblock %}
