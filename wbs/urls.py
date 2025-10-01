@@ -1,11 +1,15 @@
 from django.urls import path
+from django.shortcuts import redirect
 from . import views
 
 app_name = 'wbs'
 
+def redirect_to_accounts_login(request):
+    return redirect('/accounts/login/')
+
 urlpatterns = [
-    # 인증 관련
-    path('login/', views.custom_login, name='custom_login'),
+    # 인증 관련 - 기존 /login/을 /accounts/login/으로 리다이렉트
+    path('login/', redirect_to_accounts_login, name='custom_login'),
     path('logout/', views.custom_logout, name='custom_logout'),
     
     # 홈페이지
