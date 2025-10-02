@@ -46,10 +46,8 @@ def custom_login_view(request):
 urlpatterns = [
     path("health/", health_check, name='health'),  # 헬스체크 엔드포인트
     path("admin/", admin.site.urls),
-    # 커스텀 로그인/로그아웃 사용 (Sites Framework 없이)
-    path("accounts/login/", custom_login_view, name='login'),
-    path("accounts/logout/", auth_views.LogoutView.as_view(), name='logout'),
-    # path("accounts/", include("allauth.urls")),  # allauth 비활성화
+    # Allauth 소셜 로그인 다시 활성화
+    path("accounts/", include("allauth.urls")),
     path("", include("wbs.urls")),
 ]
 

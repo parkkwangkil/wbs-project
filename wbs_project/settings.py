@@ -46,15 +46,15 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # "django.contrib.sites",  # Sites Framework 비활성화
+    "django.contrib.sites",  # Sites Framework 다시 활성화
     
-    # allauth 비활성화
-    # "allauth",
-    # "allauth.account",
-    # "allauth.socialaccount",
-    # "allauth.socialaccount.providers.google",
-    # "allauth.socialaccount.providers.naver",
-    # "allauth.socialaccount.providers.kakao",
+    # allauth 다시 활성화
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.naver",
+    "allauth.socialaccount.providers.kakao",
     
     # Third party apps
     # "allauth",
@@ -74,7 +74,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    # "allauth.account.middleware.AccountMiddleware",  # 비활성화
+    "allauth.account.middleware.AccountMiddleware",  # 다시 활성화
 ]
 
 ROOT_URLCONF = "wbs_project.urls"
@@ -191,26 +191,22 @@ CSRF_USE_SESSIONS = False
 CSRF_COOKIE_DOMAIN = None
 CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
 
-# Django Allauth 설정 비활성화됨
-# SITE_ID = 1
+# Django Allauth 설정 다시 활성화
+SITE_ID = 1
 
-# AUTHENTICATION_BACKENDS = [
-#     'django.contrib.auth.backends.ModelBackend',
-#     'allauth.account.auth_backends.AuthenticationBackend',
-# ]
-
-# Allauth 설정 비활성화됨
-# ACCOUNT_EMAIL_REQUIRED = True
-# ACCOUNT_USERNAME_REQUIRED = False
-# ACCOUNT_AUTHENTICATION_METHOD = 'email'
-# ACCOUNT_EMAIL_VERIFICATION = 'none'
-# LOGIN_REDIRECT_URL = '/'
-# LOGOUT_REDIRECT_URL = '/accounts/login/'
-
-# Django 기본 인증 설정
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
+
+# Allauth 설정 다시 활성화
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+ACCOUNT_LOGOUT_ON_GET = True
+ACCOUNT_LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # 로그인/로그아웃 리다이렉트
 LOGIN_REDIRECT_URL = '/'
