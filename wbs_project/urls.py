@@ -19,10 +19,14 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("accounts/", include("allauth.urls")),
+    # Django 기본 로그인/로그아웃 사용
+    path("accounts/login/", auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path("accounts/logout/", auth_views.LogoutView.as_view(), name='logout'),
+    # path("accounts/", include("allauth.urls")),  # allauth 비활성화
     path("", include("wbs.urls")),
 ]
 

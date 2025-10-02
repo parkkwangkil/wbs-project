@@ -48,13 +48,13 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.sites",
     
-    # allauth
-    "allauth",
-    "allauth.account",
-    "allauth.socialaccount",
-    "allauth.socialaccount.providers.google",
-    "allauth.socialaccount.providers.naver",
-    "allauth.socialaccount.providers.kakao",
+    # allauth 비활성화
+    # "allauth",
+    # "allauth.account",
+    # "allauth.socialaccount",
+    # "allauth.socialaccount.providers.google",
+    # "allauth.socialaccount.providers.naver",
+    # "allauth.socialaccount.providers.kakao",
     
     # Third party apps
     # "allauth",
@@ -207,29 +207,27 @@ CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
 # LOGIN_REDIRECT_URL = '/'
 # LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-# allauth 설정
+# Django 기본 인증 설정
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-SITE_ID = 1
-
-# allauth 설정
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_VERIFICATION = 'none'
-ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
-ACCOUNT_LOGOUT_ON_GET = True
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+# 로그인/로그아웃 리다이렉트
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = '/accounts/login/'
 
-# 커스텀 폼 설정
-ACCOUNT_FORMS = {
-    'login': 'wbs.forms.CustomLoginForm',
-}
+# allauth 설정 비활성화
+# SITE_ID = 1
+# ACCOUNT_EMAIL_REQUIRED = True
+# ACCOUNT_USERNAME_REQUIRED = False
+# ACCOUNT_AUTHENTICATION_METHOD = 'email'
+# ACCOUNT_EMAIL_VERIFICATION = 'none'
+# ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+# ACCOUNT_LOGOUT_ON_GET = True
+# ACCOUNT_FORMS = {
+#     'login': 'wbs.forms.CustomLoginForm',
+# }
 
 # 로그인 에러 메시지 설정
 ACCOUNT_LOGIN_ATTEMPTS_LIMIT = 5

@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}로그인 - WBS 프로젝트 관리{% endblock %}
+
+{% block page_title %}로그인{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1">
+    <div class="card" style="max-width: 400px; margin: 0 auto;">
+        <div class="card-header">
+            <h2 class="card-title" style="text-align: center;">
+                <i class="fas fa-sign-in-alt" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                로그인
+            </h2>
+        </div>
+        <div class="card-body">
+            <!-- 에러 메시지 표시 -->
+            {% if form.errors %}
+                <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                    <div style="color: #DC2626; font-size: 14px; font-weight: 500;">
+                        <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                        로그인 실패
+                    </div>
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <div style="color: #DC2626; font-size: 13px; margin-top: 4px;">
+                                • {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                    {% if form.non_field_errors %}
+                        {% for error in form.non_field_errors %}
+                            <div style="color: #DC2626; font-size: 13px; margin-top: 4px;">
+                                • {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endif %}
+            
+            <!-- Django 기본 로그인 폼 -->
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label class="form-label" for="id_username">
+                        <i class="fas fa-user" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        사용자명 또는 이메일
+                    </label>
+                    <input type="text" name="username" id="id_username" class="form-control login-input" placeholder="사용자명 또는 이메일을 입력하세요" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="id_password">
+                        <i class="fas fa-lock" style="margin-right: 0.5rem; color: var(--text-secondary);"></i>
+                        비밀번호
+                    </label>
+                    <input type="password" name="password" id="id_password" class="form-control login-input" placeholder="비밀번호를 입력하세요" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-sign-in-alt"></i>
+                    로그인
+                </button>
+            </form>
+            
+            <div style="text-align: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--card-border);">
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">
+                    관리자 계정: admin@example.com / admin1234<br>
+                    테스트 계정: devops@test.com / devops123
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 로그인 입력 필드와 버튼 높이 통일 */
+.login-input {
+    height: 44px;
+    font-size: 14px;
+}
+
+.btn {
+    height: 44px;
+    font-size: 14px;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+    .login-input {
+        height: 48px;
+        font-size: 16px;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+    
+    .btn {
+        height: 48px;
+        font-size: 16px;
+    }
+}
+</style>
+{% endblock %}
