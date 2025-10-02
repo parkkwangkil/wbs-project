@@ -20,8 +20,13 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+from django.http import HttpResponse
+
+def health_check(request):
+    return HttpResponse("OK", content_type="text/plain")
 
 urlpatterns = [
+    path("health/", health_check, name='health'),  # 헬스체크 엔드포인트
     path("admin/", admin.site.urls),
     # Django 기본 로그인/로그아웃 사용
     path("accounts/login/", auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
