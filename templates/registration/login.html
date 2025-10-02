@@ -15,28 +15,16 @@
         </div>
         <div class="card-body">
             <!-- 에러 메시지 표시 -->
-            {% if form.errors %}
-                <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
-                    <div style="color: #DC2626; font-size: 14px; font-weight: 500;">
-                        <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
-                        로그인 실패
-                    </div>
-                    {% for field, errors in form.errors.items %}
-                        {% for error in errors %}
-                            <div style="color: #DC2626; font-size: 13px; margin-top: 4px;">
-                                • {{ error }}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                            <div style="color: #DC2626; font-size: 14px; font-weight: 500;">
+                                <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                {{ message }}
                             </div>
-                        {% endfor %}
+                        </div>
                     {% endfor %}
-                    {% if form.non_field_errors %}
-                        {% for error in form.non_field_errors %}
-                            <div style="color: #DC2626; font-size: 13px; margin-top: 4px;">
-                                • {{ error }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                </div>
-            {% endif %}
+                {% endif %}
             
             <!-- Django 기본 로그인 폼 -->
             <form method="post" class="space-y-4">
