@@ -226,6 +226,11 @@ ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
+# 커스텀 폼 설정
+ACCOUNT_FORMS = {
+    'login': 'wbs.forms.CustomLoginForm',
+}
+
 # 로그인 에러 메시지 설정
 ACCOUNT_LOGIN_ATTEMPTS_LIMIT = 5
 ACCOUNT_LOGIN_ATTEMPTS_TIMEOUT = 300
