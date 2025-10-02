@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.db import models
-# from allauth.account.forms import LoginForm as AllauthLoginForm  # 비활성화
+# Allauth 완전 제거 - Django 기본 로그인 사용
 from .models import Project, ProjectPhase, Comment, DailyProgress, TaskChecklistItem, UserProfile, SubscriptionPlan, UserSubscription, AdCampaign, Event, PersonalTask
 
 # CustomLoginForm 비활성화 (Django 기본 로그인 사용)
