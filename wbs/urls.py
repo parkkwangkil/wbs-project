@@ -81,4 +81,9 @@ urlpatterns = [
     path('events/<int:pk>/delete/', views.event_delete, name='event_delete'),
     path('events/<int:pk>/toggle-complete/', views.event_toggle_complete, name='event_toggle_complete'),
     path('events/quick-create/', views.event_quick_create, name='event_quick_create'),
+    
+    # Flutter 앱용 JSON API
+    path('api/projects/', views.api_projects, name='api_projects'),
+    path('api/events/', views.api_events, name='api_events'),
+    path('api/users/', views.api_users, name='api_users'),
 ]

@@ -7,12 +7,73 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import cache_page
 from django.utils import timezone
 from django.db.models import Q, F
 from .models import Project, ProjectPhase, ApprovalLine, Comment, ProjectDocument, DailyProgress, TaskChecklistItem, UserProfile, Notification, SubscriptionPlan, UserSubscription, AdCampaign, Event
 from .forms import ProjectForm, ProjectPhaseForm, CommentForm, DailyProgressForm, TaskChecklistItemForm, UserProfileForm, UserForm, SubscriptionPlanForm, UserSubscriptionForm, AdCampaignForm, EventForm, EventAttendeesForm, PersonalTaskForm
 from datetime import datetime, timedelta, date
 import json
+
+# Flutter 앱용 JSON API 엔드포인트들
+@csrf_exempt
+def api_projects(request):
+    """프로젝트 목록 JSON API"""
+    if request.method == 'GET':
+        projects = Project.objects.all()
+        data = []
+        for project in projects:
+            data.append({
+                'id': project.id,
+                'title': project.title,
+                'description': project.description,
+                'status': project.status,
+                'start_date': project.start_date.isoformat() if project.start_date else None,
+                'end_date': project.end_date.isoformat() if project.end_date else None,
+                'created_at': project.created_at.isoformat(),
+                'updated_at': project.updated_at.isoformat(),
+                'manager': project.manager.username if project.manager else None,
+            })
+        return JsonResponse({'projects': data})
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@csrf_exempt
+def api_events(request):
+    """이벤트 목록 JSON API"""
+    if request.method == 'GET':
+        events = Event.objects.all()
+        data = []
+        for event in events:
+            data.append({
+                'id': event.id,
+                'title': event.title,
+                'description': event.description,
+                'start_time': event.start_time.isoformat() if event.start_time else None,
+                'end_time': event.end_time.isoformat() if event.end_time else None,
+                'location': event.location,
+                'created_at': event.created_at.isoformat(),
+            })
+        return JsonResponse({'events': data})
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@csrf_exempt
+def api_users(request):
+    """사용자 목록 JSON API"""
+    if request.method == 'GET':
+        users = User.objects.all()
+        data = []
+        for user in users:
+            data.append({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'is_staff': user.is_staff,
+                'date_joined': user.date_joined.isoformat(),
+            })
+        return JsonResponse({'users': data})
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 def custom_login(request):
     """커스텀 로그인 페이지"""
