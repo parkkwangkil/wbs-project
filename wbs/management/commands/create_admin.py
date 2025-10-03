@@ -20,3 +20,4 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.WARNING('관리자 계정이 이미 존재합니다.')
             )
+
